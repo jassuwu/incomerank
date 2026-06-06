@@ -47,18 +47,26 @@ export interface Dot { x: number; y: number }
 export interface Floor { daily: number; y: number; label: string; tag: string; kind: "poor" | "mid" | "you" | "rich" | "famous" | "peak" }
 
 // Famous-income ladder for the lonely tail (nominal US$/day, estimated 2025–2026).
-// Basis is mixed and disclosed: ANNUAL EARNINGS ÷ 365 for the creator/athlete/
-// entertainer; year-over-year WEALTH GROWTH ÷ 365 for the billionaires (paper
-// wealth, not salary — volatile). Sources: Forbes (World's Billionaires 2026,
-// Top Creators, Highest-Paid Athletes) & celebrity earnings. See SOURCES.md.
+// A deliberately INTERNATIONAL yardstick — names recognized across India, Korea,
+// Japan, Africa and the West, not just Silicon Valley. Basis is mixed and disclosed:
+// ANNUAL EARNINGS ÷ 365 for the creators/athletes/entertainers; year-over-year
+// WEALTH GROWTH ÷ 365 for the billionaires (paper wealth, not salary — volatile,
+// and in a bad year negative: Ambani's net worth actually fell in 2026, so his rung
+// is a representative recent up-year, not 2026). Sources: Forbes (Billionaires 2026,
+// Highest-Paid Athletes, Top Creators), Bloomberg Billionaires Index & celebrity
+// earnings. See SOURCES.md.
 // You blow past every one of them on "keep going" and stop at the ceiling: Elon.
 const FAMOUS: Omit<Floor, "y">[] = [
-  { daily: 233_000, label: "MrBeast", tag: "top creator · ~$233K/day", kind: "famous" },
-  { daily: 753_000, label: "Cristiano Ronaldo", tag: "highest-paid athlete · ~$750K/day", kind: "famous" },
-  { daily: 1_100_000, label: "Taylor Swift", tag: "top entertainer · ~$1.1M/day", kind: "famous" },
-  { daily: 16_400_000, label: "Larry Ellison", tag: "Oracle founder · wealth +~$16M/day", kind: "famous" },
-  { daily: 120_000_000, label: "Jeff Bezos", tag: "Amazon founder · wealth +~$120M/day", kind: "famous" },
-  { daily: 1_360_000_000, label: "Elon Musk", tag: "richest person alive · wealth +~$1.4B/day", kind: "peak" },
+  { daily: 110_000, label: "Shah Rukh Khan", tag: "India · Bollywood · ~$110K/day", kind: "famous" },
+  { daily: 233_000, label: "MrBeast", tag: "US · top creator · ~$233K/day", kind: "famous" },
+  { daily: 370_000, label: "BTS", tag: "S. Korea · K-pop · ~$370K/day", kind: "famous" },
+  { daily: 753_000, label: "Cristiano Ronaldo", tag: "Portugal · football · ~$750K/day", kind: "famous" },
+  { daily: 1_100_000, label: "Taylor Swift", tag: "US · pop music · ~$1.1M/day", kind: "famous" },
+  { daily: 18_000_000, label: "Aliko Dangote", tag: "Nigeria · Africa's richest · +~$18M/day", kind: "famous" },
+  { daily: 30_000_000, label: "Tadashi Yanai", tag: "Japan · Uniqlo · +~$30M/day", kind: "famous" },
+  { daily: 50_000_000, label: "Mukesh Ambani", tag: "India · Reliance · +~$50M/day", kind: "famous" },
+  { daily: 120_000_000, label: "Jeff Bezos", tag: "US · Amazon · +~$120M/day", kind: "famous" },
+  { daily: 1_360_000_000, label: "Elon Musk", tag: "richest person alive · +~$1.4B/day", kind: "peak" },
 ];
 /** The ceiling of the tower — Elon Musk's estimated daily wealth growth. */
 export const TOWER_PEAK_DAILY = FAMOUS[FAMOUS.length - 1].daily;

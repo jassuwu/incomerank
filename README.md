@@ -19,12 +19,12 @@
 <p align="center">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="docs/assets/readme/incomerank-header-poster.png">
-    <img alt="Income Rank rides your income up a log-scale column of everyone on Earth, lands on your global percentile, then keeps climbing past MrBeast, Ronaldo and Swift all the way to Elon Musk." src="docs/assets/readme/incomerank-header.gif" width="900">
+    <img alt="Income Rank rides your income up a log-scale column of everyone on Earth, lands on your global percentile, then keeps climbing past creators, athletes and billionaires from around the world all the way to Elon Musk." src="docs/assets/readme/incomerank-header.gif" width="900">
   </picture>
 </p>
 
 <p align="center">
-  <em>₹50,000/month is the global top 16% — and Elon Musk earns 61&times; that <strong>every day</strong>.</em>
+  <em>₹50,000/month is the global top 16% — and Elon Musk earns 61&nbsp;million&times; that <strong>every day</strong>.</em>
 </p>
 
 Your income never touches a server. Every ranking runs **client-side** in your
@@ -51,8 +51,8 @@ The hero is **ASCENT** — income as altitude on a log axis. Everyone on Earth i
 column of dots, densest at the bottom (billions on a few dollars a day) thinning to
 a lonely thread in the rich tail. You ride a glass car *up* the shaft; the world
 scrolls past; floors are income landmarks (the poverty line, the median person, the
-global top 1%). Past your own floor you can keep climbing — flying past MrBeast,
-Ronaldo and Swift, all the way to the ceiling, Elon Musk. A procedural Web-Audio
+global top 1%). Past your own floor you can keep climbing — flying past Shah Rukh
+Khan, BTS, Ronaldo and Mukesh Ambani, all the way to the ceiling, Elon Musk. A procedural Web-Audio
 ratchet ticks per notch of travel and machine-guns with speed; a thunk + chime
 marks each landing. One pure geometry (`src/lib/tower.ts`) drives the live reveal,
 the static `/r/N` share pages, the OG cards and this README's header alike.

@@ -475,7 +475,7 @@ continueUpEl.addEventListener("click", () => {
   continueUpEl.classList.add("hidden");
   revealEyebrowEl.textContent = "flying past everyone…";
   const youDaily = dailyOf(curAmount);
-  // a slow, STEADY climb past MrBeast, Ronaldo, Swift, Ellison, Bezos… so you can
+  // a slow, STEADY climb past Shah Rukh Khan, MrBeast, BTS, Ronaldo, Ambani, Bezos… so you can
   // read each one as you pass — linear (no blast-off), ~8.5s up to the ceiling.
   ride(youDaily, TOWER_PEAK_DAILY, 8500, () => {
     revealEyebrowEl.textContent = "and at the top, Elon Musk earns";
