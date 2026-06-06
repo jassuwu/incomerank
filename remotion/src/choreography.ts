@@ -4,9 +4,13 @@
  * ticks land exactly on the on-screen motion. Pure + deterministic.
  *
  * It reuses the real site geometry (worldY/camYFor from src/lib/tower.ts) and the
- * real baked world distribution, so the demo ranks $200k/yr exactly like the site.
+ * real baked world distribution, so the demo ranks ₹50,000/mo exactly like the site.
  */
 import { worldY, camYFor, TOWER_PEAK_DAILY, fracBelow } from "../../src/lib/tower";
+import { localTopPercent } from "../../src/lib/percentile";
+import { toDailyIntl } from "../../src/lib/ppp";
+import { formatTopPercent } from "../../src/lib/rank-copy";
+import type { CountryData } from "../../src/lib/types";
 import world from "../../src/data/world.json";
 import india from "../../public/data/countries/IND.json";
 
@@ -19,31 +23,54 @@ export const PERIOD = "mo";
 export const COUNTRY = "india";
 const MONTHLY = 50_000;
 export const YOU_DAILY = (MONTHLY * 12) / 365 / india.fx; // → market-FX US$/day (~$22)
+// the home-country (local) rank — the SAME figure the live site shows for this
+// subject, so the demo's "and top Y% at home" line never drifts from the product.
+export const LOCAL_TOP = localTopPercent(india as unknown as CountryData, toDailyIntl(MONTHLY, "monthly", india.ppp2021));
+export const LOCAL_TOP_LABEL = formatTopPercent(LOCAL_TOP);
 export const cdf = world.cdfNom as [number, number][];
 export const WORLD_POP = world.worldPopulation;
 export const BOTTOM = cdf[0][0]; //            poorest income the data covers
 export const PEAK = TOWER_PEAK_DAILY; //       Elon, the ceiling
 
 // ── the beats (frames @ 30fps) ───────────────────────────────────────────────
+export const INPUT = 96; //        ~3.2s — the form: type the income, hit "find my rank"
 export const ENTRY = 36; //        ~1.2s — the income on screen, shaft at the ground
 export const ASCENT = 84; //       ~2.8s — ratchet up to your floor
-export const HOLD = 66; //         ~2.2s — land + "you're top 0.21%"
+export const HOLD = 66; //         ~2.2s — land + "you're top 16%" (+ home rank)
 export const TAIL = 192; //        ~6.4s — climb the famous ladder to Elon
 export const ELON_HOLD = 63; //    ~2.1s — the punchline
 
-export const ENTRY_END = ENTRY; //                         36
-export const ASCENT_END = ENTRY_END + ASCENT; //           120
-export const HOLD_END = ASCENT_END + HOLD; //              186
-export const TAIL_END = HOLD_END + TAIL; //                378
-export const BASE_TOTAL = TAIL_END + ELON_HOLD; //         441 (~14.7s) — the README GIF
+export const INPUT_END = INPUT; //                         96
+export const ENTRY_END = INPUT_END + ENTRY; //             132
+export const ASCENT_END = ENTRY_END + ASCENT; //           216
+export const HOLD_END = ASCENT_END + HOLD; //              282
+export const TAIL_END = HOLD_END + TAIL; //                474
+export const BASE_TOTAL = TAIL_END + ELON_HOLD; //         537 (~17.9s) — the README GIF
 export const CTA_LEN = 84; //                              ~2.8s — the social call-to-action
-export const CTA_TOTAL = BASE_TOTAL + CTA_LEN; //          525 (~17.5s) — the social MP4
+export const CTA_TOTAL = BASE_TOTAL + CTA_LEN; //          621 (~20.7s) — the social MP4
 
 export const LAND_FRAMES = [ASCENT_END, TAIL_END]; // thunk+chime at each landing
 export const CTA_FRAME = BASE_TOTAL; //                    the end-card lands here
 
-export type Phase = "entry" | "ascent" | "hold" | "tail" | "elon" | "cta";
+// ── the input scene: the income is typed in, then "find my rank" is pressed ──
+// (so the demo opens by clearly waiting for input instead of abruptly counting).
+export const TYPE_START = 18; //   frame the first keystroke lands
+export const TYPE_STEP = 11; //    frames between keystrokes
+export const TYPE_STEPS = ["", "5", "50", "500", "5,000", "50,000"];
+export const SUBMIT_FRAME = 80; // the "find my rank" press
+
+/** The amount string typed so far at a given input-scene frame. */
+export function typedAmountAt(f: number): string {
+  if (f < TYPE_START) return "";
+  const i = Math.min(TYPE_STEPS.length - 1, Math.floor((f - TYPE_START) / TYPE_STEP) + 1);
+  return TYPE_STEPS[i];
+}
+/** Frames on which a keystroke lands — the audio ticks one per keypress. */
+export const TYPE_KEY_FRAMES = TYPE_STEPS.slice(1).map((_, k) => TYPE_START + k * TYPE_STEP);
+
+export type Phase = "input" | "entry" | "ascent" | "hold" | "tail" | "elon" | "cta";
 export function phaseAt(f: number): Phase {
+  if (f < INPUT_END) return "input";
   if (f < ENTRY_END) return "entry";
   if (f < ASCENT_END) return "ascent";
   if (f < HOLD_END) return "hold";

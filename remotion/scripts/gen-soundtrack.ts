@@ -11,7 +11,7 @@
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { FPS, CTA_TOTAL, CTA_FRAME, tickFrames, LAND_FRAMES } from "../src/choreography";
+import { FPS, CTA_TOTAL, CTA_FRAME, tickFrames, LAND_FRAMES, TYPE_KEY_FRAMES, SUBMIT_FRAME } from "../src/choreography";
 
 const SR = 44100;
 const TAIL = 0.8; // seconds of room for the last decay
@@ -55,6 +55,15 @@ function add(t0: number, v: Voice) {
     buf[idx] += s * env;
   }
 }
+
+// ── input scene: a soft key-click per keystroke, then a confirming press ──────
+// (lower + quieter than the ratchet so it reads as typing, not the climb).
+for (const f of TYPE_KEY_FRAMES) {
+  add(f / FPS, { dur: 0.05, peak: 0.16, attack: 0.001, decayEnd: 0.04, type: "triangle", f0: 900 + Math.random() * 120 });
+}
+// the "find my rank" press — a short, bright rising two-note confirm
+add(SUBMIT_FRAME / FPS, { dur: 0.16, peak: 0.26, attack: 0.002, decayEnd: 0.14, type: "sine", f0: 660 });
+add(SUBMIT_FRAME / FPS + 0.05, { dur: 0.2, peak: 0.22, attack: 0.002, decayEnd: 0.18, type: "sine", f0: 990 });
 
 // ── ratchet ticks (sound.ts tick(): triangle ~1500-1720Hz, ~40ms) ────────────
 const ticks = tickFrames();
