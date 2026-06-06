@@ -246,7 +246,16 @@ const list = countries as CountryIndexEntry[];
     -webkit-mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 91%, transparent);
     mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 91%, transparent);
   }
-  .shaft svg {
+  /* :global(svg) — the shaft svg is injected via innerHTML at runtime, so it has no
+     astro-cid scope attr; a plain `.shaft svg` rule would never match it (it was
+     falling back to the browser default: width 100% but intrinsic-aspect height,
+     ~2.6px shorter than the container and top-pinned). That mismatch is why the CSS
+     car (54% of the container) never landed on a floor line (54% of the shorter svg).
+     Force the svg to FILL the shaft in both axes; with preserveAspectRatio slice the
+     viewBox then maps 1:1 onto container-y, so the car + puck + lines all agree. */
+  .shaft :global(svg) {
+    position: absolute;
+    inset: 0;
     display: block;
     width: 100%;
     height: 100%;
@@ -284,7 +293,7 @@ const list = countries as CountryIndexEntry[];
     position: absolute;
     left: 0;
     right: 0;
-    top: 0;
+    top: -1px; /* center the 2px bar on the eye-line (the dot center) → lands on the floor line */
     height: 2px;
     background: var(--color-accent);
     opacity: 0.92;

@@ -186,7 +186,13 @@ function dailyOf(amount: number): number {
 function renderTower(youDaily: number, guessDaily?: number) {
   const t: Tower = buildTower(cdfFor(), youDaily, W.worldPopulation, 3200);
   fieldEl.innerHTML =
-    `<svg viewBox="${-VIEW_W / 2} ${camYFor(youDaily)} ${VIEW_W} ${VIEW_H}" preserveAspectRatio="xMidYMid meet">` +
+    // slice (not meet): the shaft box is ~2px narrower than the viewBox (the .shaft
+    // borders), so meet letterboxes vertically and "54% of the box" drifts ~1.4px off
+    // "54% of the viewBox" — i.e. the car never quite lands on a floor line. slice
+    // height-fits exactly (box is always ≤ viewBox aspect), so container-fraction maps
+    // 1:1 to viewBox-y. That's also what the puck/pointer math assumes. Only dead
+    // horizontal margin (beyond the ±80 walls) gets cropped.
+    `<svg viewBox="${-VIEW_W / 2} ${camYFor(youDaily)} ${VIEW_W} ${VIEW_H}" preserveAspectRatio="xMidYMid slice">` +
     `${towerBody(t, TOWER_C, { live: true, hideYou: true, guessDaily })}</svg>`;
   camSvg = fieldEl.querySelector("svg");
   blurEl = fieldEl.querySelector("#vblur-b");
