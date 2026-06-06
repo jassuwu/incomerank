@@ -158,6 +158,13 @@ export interface TowerOpts {
   clampTopY?: number; //    don't render above this y (resvg-safe for the tail)
   clampBottomY?: number; // don't render below this y (resvg-safe)
   hideYou?: boolean; //     skip the YOU floor + marker (the live car overlay draws them)
+  // ── live-reveal-only flags (the remotion video + static /r/ pages never set these,
+  // so their output stays byte-identical and no re-render/regen is forced) ──
+  quietFloors?: boolean; // recede ordinary floors + suppress tags near YOU/guess so the
+  //                         three protagonists (you / guess / Elon) pop; adds Elon's ▲ cap
+  youLabel?: string; //     render a labeled accent "YOU" pill on the shaft (in a .you-mark
+  //                         group the live reveal reveals on landing)
+  guessTopLabel?: string; // label text for the guess pill (else a plain "YOUR GUESS")
 }
 
 /** The shaft body (walls, crowd, floors, you, guess) as an inner-SVG string. */
@@ -168,6 +175,20 @@ export function towerBody(t: Tower, c: TowerColors, o: TowerOpts = {}): string {
   const bot = o.clampBottomY ?? Infinity;
   const bottomY = Math.min(t.shaftBottomY + 30, bot);
   let s = "";
+
+  // a small right-anchored label pill (rect + text), pinned to the right wall.
+  // width is estimated from the label length (server-side text metrics aren't
+  // available); a little padding slack is fine. Used for the YOU + guess marks.
+  const pill = (yc: number, label: string, fillc: string, txtc: string, borderc?: string) => {
+    const fs = 7.4;
+    const w = label.length * fs * 0.56 + 13;
+    const h = 13;
+    const xL = SHAFT_HALF - w;
+    return (
+      `<rect x="${nn(xL)}" y="${nn(yc - h / 2)}" width="${nn(w)}" height="${h}" rx="6.5" fill="${fillc}"${borderc ? ` stroke="${borderc}" stroke-width="1"` : ""}/>` +
+      `<text x="${nn(SHAFT_HALF - 6)}" y="${nn(yc + 2.6)}" text-anchor="end" font-size="${fs}" font-weight="700" fill="${txtc}" letter-spacing="0.2">${label}</text>`
+    );
+  };
 
   // shaft walls
   for (const x of [-SHAFT_HALF, SHAFT_HALF])
@@ -183,7 +204,11 @@ export function towerBody(t: Tower, c: TowerColors, o: TowerOpts = {}): string {
   }
   s += `</g>`;
 
-  // floors: a hairline across the shaft + label inside, left
+  // floors: a hairline across the shaft + label inside, left. With quietFloors
+  // (live reveal only) the ordinary floors recede and tags near YOU/guess are
+  // suppressed, so the you / guess / Elon marks are the only things that pop.
+  const q = o.quietFloors ?? false;
+  const lg = (d: number) => Math.log10(Math.max(d, 1e-6));
   for (const f of t.floors) {
     if (f.y < top || f.y > bot) continue;
     if (o.hideYou && f.kind === "you") continue;
@@ -192,24 +217,46 @@ export function towerBody(t: Tower, c: TowerColors, o: TowerOpts = {}): string {
     const isFamous = f.kind === "famous";
     const strong = isYou || isPeak; //     solid, emphasized lines
     const col = isYou || isPeak ? c.you : isFamous ? c.ink : c.ink;
-    const halo = `paint-order="stroke" stroke="${c.paper}" stroke-width="2.4" stroke-linejoin="round"`;
-    s += `<line x1="${-SHAFT_HALF}" y1="${nn(f.y)}" x2="${SHAFT_HALF}" y2="${nn(f.y)}" stroke="${col}" stroke-width="${strong ? (live ? 2 : 2.4) : live ? 1 : 1.1}" opacity="${strong ? 0.95 : isFamous ? 0.5 : 0.32}" stroke-dasharray="${strong ? "" : live ? "3 4" : "4 5"}"${ve}/>`;
-    s += `<text x="${-SHAFT_HALF + 5}" y="${nn(f.y - 4.5)}" font-size="${isFamous || isPeak ? 9.6 : 9}" font-weight="700" fill="${col}" opacity="${strong ? 1 : 0.9}" ${halo}>${f.label}</text>`;
-    s += `<text x="${-SHAFT_HALF + 5}" y="${nn(f.y + 8)}" font-size="6.4" fill="${isYou || isPeak ? c.you : c.muted}" opacity="${strong ? 0.95 : 0.85}" letter-spacing="0.3" paint-order="stroke" stroke="${c.paper}" stroke-width="1.7" stroke-linejoin="round">${f.tag.toUpperCase()}</text>`;
+    const haloW = q ? 2.6 : 2.4;
+    const halo = `paint-order="stroke" stroke="${c.paper}" stroke-width="${haloW}" stroke-linejoin="round"`;
+    const lineOp = strong ? 0.95 : isFamous ? 0.5 : q ? 0.26 : 0.32;
+    const labelOp = strong ? 1 : q ? 0.78 : 0.9;
+    s += `<line x1="${-SHAFT_HALF}" y1="${nn(f.y)}" x2="${SHAFT_HALF}" y2="${nn(f.y)}" stroke="${col}" stroke-width="${strong ? (live ? 2 : 2.4) : live ? 1 : 1.1}" opacity="${lineOp}" stroke-dasharray="${strong ? "" : live ? "3 4" : "4 5"}"${ve}/>`;
+    s += `<text x="${-SHAFT_HALF + 5}" y="${nn(f.y - 4.5)}" font-size="${isFamous || isPeak ? 9.6 : 9}" font-weight="700" fill="${col}" opacity="${labelOp}" ${halo}>${f.label}</text>`;
+    // the secondary tag recedes too, and is dropped near the action so it never
+    // overlaps the YOU/guess marks or the dense dot field.
+    const nearAction = q && !strong && (Math.abs(lg(f.daily) - lg(t.you.daily)) < 0.35 || (o.guessDaily ? Math.abs(lg(f.daily) - lg(o.guessDaily)) < 0.35 : false));
+    if (!nearAction)
+      s += `<text x="${-SHAFT_HALF + 5}" y="${nn(f.y + 8)}" font-size="6.4" fill="${isYou || isPeak ? c.you : c.muted}" opacity="${strong ? 0.95 : q ? 0.7 : 0.85}" letter-spacing="0.3" paint-order="stroke" stroke="${c.paper}" stroke-width="1.7" stroke-linejoin="round">${f.tag.toUpperCase()}</text>`;
+    // Elon gets a small ▲ cap so the ceiling reads as a distinct accent FORM
+    // from the (also-accent) YOU dot. Live reveal only (gated by quietFloors).
+    if (isPeak && q) s += `<text x="0" y="${nn(f.y - 2.5)}" text-anchor="middle" font-size="9" fill="${c.you}">▲</text>`;
   }
 
-  // the guess ghost-line
+  // YOUR GUESS — deliberately UNLIKE the truth so they can never be confused:
+  // muted (not accent), a HOLLOW ring on the right wall (not a filled center dot),
+  // a longer "5 4" dash, and a right-anchored pill. Only the live reveal passes
+  // guessDaily, so the video + /r/ pages never render this.
   if (o.guessDaily) {
     const gy = worldY(o.guessDaily);
     if (gy >= top && gy <= bot) {
-      s += `<line x1="${-SHAFT_HALF}" y1="${nn(gy)}" x2="${SHAFT_HALF}" y2="${nn(gy)}" stroke="${c.guess}" stroke-width="${live ? 1.4 : 1.6}" opacity="0.9" stroke-dasharray="${live ? "2 3" : "3 4"}"${ve}/>`;
-      s += `<text x="${SHAFT_HALF - 5}" y="${nn(gy - 4.5)}" text-anchor="end" font-size="7" font-weight="700" fill="${c.guess}" paint-order="stroke" stroke="${c.paper}" stroke-width="1.9" stroke-linejoin="round">YOUR GUESS</text>`;
+      s += `<line x1="${-SHAFT_HALF}" y1="${nn(gy)}" x2="${SHAFT_HALF}" y2="${nn(gy)}" stroke="${c.guess}" stroke-width="${live ? 1.4 : 1.6}" opacity="0.7" stroke-dasharray="5 4"${ve}/>`;
+      s += `<circle cx="${SHAFT_HALF}" cy="${nn(gy)}" r="3.6" fill="${c.paper}" stroke="${c.guess}" stroke-width="1.4"/>`;
+      s += pill(gy - 11, o.guessTopLabel ?? "YOUR GUESS", c.paper, c.guess, c.wall);
     }
   }
 
-  // YOU — a glowing marker riding in the car
+  // YOU — the truth. Live reveal: a labeled accent group (the .you-mark group the
+  // reveal fades in on landing; the live car overlay supplies the dot + eye-line,
+  // so here we add the solid accent line + the right-anchored "YOU" pill). Static
+  // /r/ pages keep the plain glowing dot. The video (hideYou, no youLabel) draws
+  // nothing — the car overlay marks YOU there too.
   const yy = t.you.y;
-  if (!o.hideYou && yy >= top && yy <= bot) {
+  if (o.youLabel && yy >= top && yy <= bot) {
+    // the car overlay (HTML) draws the dot + accent eye-line at the car line; here
+    // we add the labeled pill, in a group the reveal fades in on landing.
+    s += `<g class="you-mark">${pill(yy - 11, o.youLabel, c.you, c.paper)}</g>`;
+  } else if (!o.hideYou && yy >= top && yy <= bot) {
     s += `<circle cx="0" cy="${nn(yy)}" r="4.5" fill="${c.you}"/>`;
     s += `<circle cx="0" cy="${nn(yy)}" r="8" fill="none" stroke="${c.you}" stroke-width="${live ? 1 : 1.2}" opacity="0.6"${ve}/>`;
   }
