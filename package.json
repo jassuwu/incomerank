@@ -7,11 +7,12 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "bun run og && astro build",
+    "build": "bun run og && bun run icons && astro build",
     "preview": "astro preview",
     "astro": "astro",
     "data": "bun run scripts/build-data.ts",
     "og": "bun run scripts/build-og.ts",
+    "icons": "bun run scripts/build-icons.ts",
     "test": "bun test"
   },
   "dependencies": {
