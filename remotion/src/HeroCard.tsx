@@ -176,12 +176,15 @@ const InputScene: React.FC = () => {
           how much<br />do you make?
         </div>
 
-        {/* the income field — currency, the number as it's typed + a blinking caret, the period */}
+        {/* the income field — currency, the number as it's typed + a blinking caret, the period.
+            The digits live in a baseline-stable wrapper: a hidden "0" reserves the line box
+            when empty, and the caret is absolutely positioned, so the row height (and thus the
+            country line + button below) never shifts as digits appear. */}
         <div style={{ marginTop: 66, display: "flex", alignItems: "baseline", gap: 22, borderBottom: `4px solid ${pressed ? C.accent : C.ink}`, paddingBottom: 16 }}>
           <span style={{ fontFamily: display, fontSize: 72, color: C.muted }}>{CURRENCY}</span>
-          <span style={{ fontFamily: display, fontWeight: 800, fontSize: 104, color: C.ink, fontVariantNumeric: "tabular-nums", letterSpacing: -2, display: "inline-flex", alignItems: "baseline" }}>
-            {typed}
-            <span style={{ display: "inline-block", width: 6, height: 90, marginLeft: typed ? 8 : 0, transform: "translateY(12px)", background: C.accent, opacity: caretOn ? 1 : 0 }} />
+          <span style={{ position: "relative", fontFamily: display, fontWeight: 800, fontSize: 104, lineHeight: 1, color: C.ink, fontVariantNumeric: "tabular-nums", letterSpacing: -2, whiteSpace: "pre" }}>
+            <span style={{ visibility: typed ? "visible" : "hidden" }}>{typed || "0"}</span>
+            <span style={{ position: "absolute", bottom: 4, left: typed ? "100%" : 0, marginLeft: typed ? 8 : 0, width: 6, height: 92, background: C.accent, opacity: caretOn ? 1 : 0 }} />
           </span>
           <span style={{ marginLeft: "auto", fontSize: 40, color: C.muted }}>{period} ▾</span>
         </div>
