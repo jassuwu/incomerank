@@ -1,0 +1,17 @@
+{
+  // Static-first deploy: Cloudflare Workers Static Assets, no Worker script and
+  // no adapter (ADR-0002). `wrangler deploy` uploads ./dist to the asset layer
+  // and binds the custom domain. jass.gg must be an active zone on this account.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "incomerank",
+  "compatibility_date": "2026-06-03",
+  "assets": {
+    "directory": "./dist"
+  },
+  "routes": [
+    {
+      "pattern": "incomerank.jass.gg",
+      "custom_domain": true
+    }
+  ]
+}
