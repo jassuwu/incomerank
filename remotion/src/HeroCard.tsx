@@ -15,6 +15,11 @@ import {
   CURRENCY,
   AMOUNT_LABEL,
   COUNTRY,
+  PERIOD,
+  LOCAL_TOP_LABEL,
+  INPUT_END,
+  SUBMIT_FRAME,
+  typedAmountAt,
   ENTRY_END,
   ASCENT_END,
   HOLD_END,
@@ -36,7 +41,10 @@ const fmtTop = (t: number) => (t >= 10 ? `${Math.round(t)}` : t >= 1 ? t.toFixed
 const fmtMult = (m: number) =>
   m >= 1e6 ? `${(m / 1e6).toFixed(m / 1e6 >= 10 ? 0 : 1)}M` : m >= 1e3 ? `${Math.round(m / 1e3)}k` : m >= 10 ? `${Math.round(m)}` : m.toFixed(1);
 
+// input + entry are settled before the cross-fade (no per-beat rise); the rest of
+// the beats rise+fade in at their own start frame.
 const PHASE_START: Record<Phase, number> = {
+  input: 0,
   entry: 0,
   ascent: ENTRY_END,
   hold: ASCENT_END,
@@ -51,6 +59,8 @@ interface Readout {
   big: string;
   unit: string;
   sub: string;
+  /** A secondary accent line under sub — used for the home-country rank. */
+  sub2?: string;
   size?: number;
 }
 
@@ -59,6 +69,7 @@ function readoutAt(frame: number): Readout {
   const cam = camDailyAtFrame(frame);
   const frac = fracBelowAt(frame);
   switch (phase) {
+    case "input":
     case "entry":
       return {
         eyebrow: "how rich are you, really?",
@@ -83,6 +94,7 @@ function readoutAt(frame: number): Readout {
         big: fmtTop(YOU_TOP),
         unit: "%",
         sub: `${BILLIONS_BELOW.toFixed(1)} billion people below · $${DOLLARS_DAY}/day`,
+        sub2: `…and top ${LOCAL_TOP_LABEL} at home in ${COUNTRY}`,
       };
     case "tail": {
       const name = famousPassed(cam);
@@ -144,11 +156,75 @@ const CtaScene: React.FC = () => {
   );
 };
 
+/** The opening: the income is typed into the real form, then "find my rank" is
+ *  pressed — so the demo clearly starts by WAITING for input (an empty field with
+ *  a blinking caret) instead of abruptly counting through numbers. */
+const InputScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const inOp = interpolate(frame, [0, 8], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const outOp = interpolate(frame, [INPUT_END - 12, INPUT_END], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const typed = typedAmountAt(frame);
+  const pressed = frame >= SUBMIT_FRAME;
+  const caretOn = !pressed && Math.floor(frame / 15) % 2 === 0;
+  const press = interpolate(frame, [SUBMIT_FRAME, SUBMIT_FRAME + 4], [1, 0.96], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const period = PERIOD === "mo" ? "per month" : "per year";
+
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", flexDirection: "column", opacity: inOp * outOp }}>
+      <div style={{ width: 1160, maxWidth: "84%" }}>
+        <div style={{ fontFamily: display, fontWeight: 800, fontSize: 130, lineHeight: 0.95, letterSpacing: -3, color: C.ink }}>
+          how much<br />do you make?
+        </div>
+
+        {/* the income field — currency, the number as it's typed + a blinking caret, the period */}
+        <div style={{ marginTop: 66, display: "flex", alignItems: "baseline", gap: 22, borderBottom: `4px solid ${pressed ? C.accent : C.ink}`, paddingBottom: 16 }}>
+          <span style={{ fontFamily: display, fontSize: 72, color: C.muted }}>{CURRENCY}</span>
+          <span style={{ fontFamily: display, fontWeight: 800, fontSize: 104, color: C.ink, fontVariantNumeric: "tabular-nums", letterSpacing: -2, display: "inline-flex", alignItems: "baseline" }}>
+            {typed}
+            <span style={{ display: "inline-block", width: 6, height: 90, marginLeft: typed ? 8 : 0, transform: "translateY(12px)", background: C.accent, opacity: caretOn ? 1 : 0 }} />
+          </span>
+          <span style={{ marginLeft: "auto", fontSize: 40, color: C.muted }}>{period} ▾</span>
+        </div>
+
+        {/* the chosen home country */}
+        <div style={{ marginTop: 42, display: "flex", alignItems: "center", gap: 14, fontSize: 42, color: C.ink }}>
+          <span style={{ color: C.accent, fontSize: 30 }}>◍</span> {COUNTRY}
+        </div>
+
+        {/* the submit — presses in (scale + accent ring) on the submit frame */}
+        <div style={{ marginTop: 74, display: "flex" }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 16,
+              borderRadius: 9999,
+              background: pressed ? C.accent : C.ink,
+              color: C.paper,
+              padding: "30px 58px",
+              fontSize: 46,
+              fontWeight: 700,
+              transform: `scale(${press})`,
+              boxShadow: pressed ? `0 0 0 14px color-mix(in srgb, ${C.accent} 22%, transparent)` : "none",
+            }}
+          >
+            find my rank <span>→</span>
+          </div>
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 export const HeroCard: React.FC<{ cta?: boolean }> = () => {
   const frame = useCurrentFrame();
   const phase = phaseAt(frame);
+  const isInput = phase === "input";
   const isCta = phase === "cta";
   const r = readoutAt(frame);
+
+  // input → demo cross-fade: the shaft scene fades in beneath the input card
+  const introIn = interpolate(frame, [INPUT_END - 10, INPUT_END + 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   const start = PHASE_START[phase];
   const enter = interpolate(frame, [start, start + 7], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
@@ -188,47 +264,55 @@ export const HeroCard: React.FC<{ cta?: boolean }> = () => {
       {isCta ? (
         <CtaScene />
       ) : (
-        <AbsoluteFill style={{ display: "flex", flexDirection: "row", alignItems: "center", padding: "120px 96px 110px 96px" }}>
-          <div style={{ height: "100%", flex: "0 0 auto", paddingRight: 40 }}>
-            <Shaft />
-          </div>
-
-          <div
-            style={{
-              flex: "1 1 auto",
-              paddingLeft: 64,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              opacity: enter,
-              transform: `translateY(${rise}px)`,
-            }}
-          >
-            <div style={{ fontSize: 40, color: C.muted, letterSpacing: 0.2, marginBottom: 18 }}>{r.eyebrow}</div>
+        <>
+          <AbsoluteFill style={{ display: "flex", flexDirection: "row", alignItems: "center", padding: "120px 96px 110px 96px", opacity: isInput ? introIn : 1 }}>
+            <div style={{ height: "100%", flex: "0 0 auto", paddingRight: 40 }}>
+              <Shaft />
+            </div>
 
             <div
               style={{
-                fontFamily: display,
-                fontWeight: 800,
-                fontSize: r.size ?? 230,
-                lineHeight: 0.92,
-                letterSpacing: -4,
-                color: C.ink,
-                fontVariantNumeric: "tabular-nums",
+                flex: "1 1 auto",
+                paddingLeft: 64,
                 display: "flex",
-                alignItems: "baseline",
+                flexDirection: "column",
+                justifyContent: "center",
+                opacity: enter,
+                transform: `translateY(${rise}px)`,
               }}
             >
-              {r.pre ? (
-                <span style={{ fontSize: (r.size ?? 230) * 0.42, fontWeight: 700, color: C.muted, marginRight: 8 }}>{r.pre}</span>
-              ) : null}
-              <span>{r.big}</span>
-              <span style={{ color: C.accent }}>{r.unit}</span>
-            </div>
+              <div style={{ fontSize: 40, color: C.muted, letterSpacing: 0.2, marginBottom: 18 }}>{r.eyebrow}</div>
 
-            <div style={{ fontSize: 46, color: C.inkSoft, marginTop: 26, fontVariantNumeric: "tabular-nums" }}>{r.sub}</div>
-          </div>
-        </AbsoluteFill>
+              <div
+                style={{
+                  fontFamily: display,
+                  fontWeight: 800,
+                  fontSize: r.size ?? 230,
+                  lineHeight: 0.92,
+                  letterSpacing: -4,
+                  color: C.ink,
+                  fontVariantNumeric: "tabular-nums",
+                  display: "flex",
+                  alignItems: "baseline",
+                }}
+              >
+                {r.pre ? (
+                  <span style={{ fontSize: (r.size ?? 230) * 0.42, fontWeight: 700, color: C.muted, marginRight: 8 }}>{r.pre}</span>
+                ) : null}
+                <span>{r.big}</span>
+                <span style={{ color: C.accent }}>{r.unit}</span>
+              </div>
+
+              <div style={{ fontSize: 46, color: C.inkSoft, marginTop: 26, fontVariantNumeric: "tabular-nums" }}>{r.sub}</div>
+              {r.sub2 ? (
+                <div style={{ fontSize: 44, color: C.accent, marginTop: 16, fontWeight: 700, letterSpacing: 0.2 }}>{r.sub2}</div>
+              ) : null}
+            </div>
+          </AbsoluteFill>
+
+          {/* the opening input card — only during the input beat */}
+          {isInput ? <InputScene /> : null}
+        </>
       )}
 
       {/* url, bottom-right (hidden on the CTA card, which says it bigger) */}

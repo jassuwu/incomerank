@@ -97,7 +97,19 @@ const list = countries as CountryIndexEntry[];
             <span class="puck-lab"><span class="puck-chev">↕</span> me? <b id="guess-lab">top 50%</b></span>
           </div>
 
-          <button id="continue-up" class="continue-up hidden" type="button">↑ keep going... who's up top?</button>
+          <!-- the lure to climb into the famous tail: an accent glow + a rising
+               arrow + a prominent pill, so the "keep going" beat can't be missed -->
+          <div id="continue-up" class="continue-up hidden">
+            <div class="cu-glow" aria-hidden="true"></div>
+            <div class="cu-chevrons" aria-hidden="true">
+              <svg viewBox="0 0 24 10" width="26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8 12 2l9 6" /></svg>
+              <svg viewBox="0 0 24 10" width="26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8 12 2l9 6" /></svg>
+              <svg viewBox="0 0 24 10" width="26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8 12 2l9 6" /></svg>
+            </div>
+            <button id="continue-up-btn" class="cu-btn" type="button">
+              <span class="cu-arrow" aria-hidden="true">↑</span> keep going — who's up top?
+            </button>
+          </div>
         </div>
 
         <!-- guess prompt -->
@@ -354,24 +366,96 @@ const list = countries as CountryIndexEntry[];
     text-shadow: 0 0 6px var(--color-paper), 0 0 6px var(--color-paper);
   }
   .odo b { color: var(--color-ink); font-variant-numeric: tabular-nums; font-weight: 700; }
+  /* "keep going" lure — the climb into the famous tail is the best part, so make
+     it unmissable: an accent glow fading up the shaft, a rising arrow rail, and a
+     bold pill. The wrapper is click-through; only the button takes the pointer. */
   .continue-up {
     position: absolute;
-    left: 50%;
-    top: 10px;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    top: 0;
     z-index: 3;
-    white-space: nowrap;
-    border-radius: 9999px;
-    border: 1px solid var(--color-line);
-    background: color-mix(in srgb, var(--color-paper) 86%, transparent);
-    padding: 0.4rem 0.9rem;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--color-ink);
-    backdrop-filter: blur(3px);
-    transition: color 0.2s ease, border-color 0.2s ease;
+    pointer-events: none;
   }
-  .continue-up:hover { color: var(--color-accent); border-color: var(--color-accent); }
+  .continue-up:not(.hidden) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  /* the accent "there's more up there" glow — a faded blur + linear accent wash
+     pinned to the top of the shaft (the Mojify-style progressive blur, simplified) */
+  .cu-glow {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 96px;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-accent) 30%, transparent),
+      color-mix(in srgb, var(--color-accent) 12%, transparent) 42%,
+      transparent
+    );
+    -webkit-mask-image: linear-gradient(to bottom, #000, #000 35%, transparent);
+    mask-image: linear-gradient(to bottom, #000, #000 35%, transparent);
+    backdrop-filter: blur(2.5px);
+    -webkit-backdrop-filter: blur(2.5px);
+  }
+  /* three chevrons climbing upward — the eye follows them into the tail */
+  .cu-chevrons {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    margin-top: 8px;
+    color: var(--color-accent);
+    pointer-events: none;
+  }
+  .cu-chevrons svg { display: block; }
+  .cu-chevrons svg:nth-child(1) { animation: cu-rise 1.4s ease-in-out infinite; }
+  .cu-chevrons svg:nth-child(2) { animation: cu-rise 1.4s ease-in-out 0.16s infinite; opacity: 0.62; }
+  .cu-chevrons svg:nth-child(3) { animation: cu-rise 1.4s ease-in-out 0.32s infinite; opacity: 0.34; }
+  @keyframes cu-rise {
+    0% { transform: translateY(4px); opacity: 0.2; }
+    50% { opacity: 1; }
+    100% { transform: translateY(-5px); opacity: 0.2; }
+  }
+  .cu-btn {
+    pointer-events: auto;
+    position: relative;
+    margin-top: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    white-space: nowrap;
+    border: none;
+    border-radius: 9999px;
+    background: var(--color-accent);
+    padding: 0.5rem 1.15rem;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--color-paper);
+    cursor: pointer;
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--color-accent) 32%, transparent);
+    animation: cu-pulse 1.9s ease-in-out infinite;
+    transition: background 0.2s ease, transform 0.12s ease;
+  }
+  .cu-btn:hover { background: var(--color-accent-ink); }
+  .cu-btn:active { transform: scale(0.97); }
+  .cu-arrow {
+    font-weight: 900;
+    animation: cu-bob 1.1s ease-in-out infinite;
+  }
+  @keyframes cu-pulse {
+    0%, 100% { box-shadow: 0 6px 18px color-mix(in srgb, var(--color-accent) 26%, transparent); }
+    50% { box-shadow: 0 9px 28px color-mix(in srgb, var(--color-accent) 48%, transparent); }
+  }
+  @keyframes cu-bob {
+    0%, 100% { transform: translateY(1.5px); }
+    50% { transform: translateY(-2px); }
+  }
 
   /* the guess handle — a vertical slider you drag up the tower (up = richer) */
   .guess-puck {
@@ -444,7 +528,10 @@ const list = countries as CountryIndexEntry[];
     .rline,
     #persp,
     .ascent.riding .car-dot,
-    .ascent.guessing .guess-puck .puck-dot {
+    .ascent.guessing .guess-puck .puck-dot,
+    .cu-chevrons svg,
+    .cu-btn,
+    .cu-arrow {
       transition: none;
       animation: none;
     }

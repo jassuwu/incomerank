@@ -30,7 +30,8 @@ const guessLabEl = $<HTMLElement>("guess-lab");
 const guessGoEl = $<HTMLButtonElement>("guess-go");
 const gapEl = $<HTMLElement>("gap");
 const exploreEl = $<HTMLElement>("explore");
-const continueUpEl = $<HTMLButtonElement>("continue-up");
+const continueUpEl = $<HTMLElement>("continue-up");
+const continueBtnEl = $<HTMLButtonElement>("continue-up-btn");
 const perspEl = $<HTMLElement>("persp");
 const perspListEl = $<HTMLUListElement>("persp-list");
 const sliderEl = $<HTMLInputElement>("slider");
@@ -469,7 +470,7 @@ function showGapText() {
 }
 
 // ── the dare: keep climbing into the tail ────────────────────────────────────
-continueUpEl.addEventListener("click", () => {
+continueBtnEl.addEventListener("click", () => {
   if (!camSvg || tailMode) return;
   tailMode = true;
   continueUpEl.classList.add("hidden");
