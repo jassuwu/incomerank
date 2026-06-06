@@ -69,6 +69,10 @@ const list = countries as CountryIndexEntry[];
         <h2 class="hero-h display text-6xl leading-none sm:text-7xl">
           <span id="hero-line">guess your floor</span>
         </h2>
+        <!-- the home-country rank — supporting context under the global hero, never the hero itself -->
+        <p id="hero-sub" class="hero-sub hero-meta mt-1.5 text-sm text-ink-soft">
+          and top <span id="local-top" class="text-ink tabular">…</span> in <span id="local-country" class="text-ink">…</span>
+        </p>
 
         <!-- the shaft + the car you ride in -->
         <div id="ascent" class="ascent relative mx-auto mt-6 select-none">
@@ -246,6 +250,28 @@ const list = countries as CountryIndexEntry[];
     transform: none;
   }
 
+  /* the home-country rank under the hero — fades in on landing, hidden during the
+     guess + the climb (it describes your floor, not the bet or the climb to Elon) */
+  .hero-sub {
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+  .hero-sub.show {
+    opacity: 1;
+  }
+  #reveal.guessing .hero-meta {
+    display: none;
+  }
+  /* the labeled YOU pill is baked into the shaft SVG (injected, so :global) and
+     fades in only once the car lands on the truth */
+  .ascent :global(.you-mark) {
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .ascent.landed :global(.you-mark) {
+    opacity: 1;
+  }
+
   /* The rotating pull-quote fades when it swaps. */
   #persp {
     transition: opacity 0.2s ease;
@@ -359,14 +385,21 @@ const list = countries as CountryIndexEntry[];
     60% { opacity: 1; }
     100% { opacity: 0.92; transform: scaleX(1); }
   }
+  /* a small paper chip so the people-below count sits cleanly over the dot field
+     instead of a raw number jammed against the shaft wall */
   .odo {
     position: absolute;
-    left: 8px;
-    top: 11px;
+    left: 10px;
+    top: 12px;
+    max-width: 62%;
     font-size: 0.72rem;
     line-height: 1.1;
     color: var(--color-muted);
-    text-shadow: 0 0 6px var(--color-paper), 0 0 6px var(--color-paper);
+    background: color-mix(in srgb, var(--color-paper) 86%, transparent);
+    padding: 2px 7px;
+    border-radius: 7px;
+    backdrop-filter: blur(1.5px);
+    -webkit-backdrop-filter: blur(1.5px);
   }
   .odo b { color: var(--color-ink); font-variant-numeric: tabular-nums; font-weight: 700; }
   /* "keep going" lure — the climb into the famous tail is the best part, so make
@@ -392,7 +425,7 @@ const list = countries as CountryIndexEntry[];
     left: 0;
     right: 0;
     top: 0;
-    height: 96px;
+    height: 72px;
     pointer-events: none;
     background: linear-gradient(
       to bottom,

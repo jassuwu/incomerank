@@ -1,7 +1,7 @@
 import world from "../data/world.json";
 import type { CountryData, Mode, WorldData } from "../lib/types";
 import { parseAmount, currencySymbol, formatCurrency } from "../lib/format";
-import { computeReveal, formatTopPercent, type RevealData } from "../lib/rank-copy";
+import { computeReveal, formatTopPercent, formatPeople, type RevealData } from "../lib/rank-copy";
 import { buildPerspectives } from "../lib/perspectives";
 import { whereYoudRank } from "../lib/where";
 import { buildTower, towerBody, camYFor, worldY, incomeAtF, fracBelow, DECADE, VIEW_W, VIEW_H, GUESS_VIEW_H, TOWER_PEAK_DAILY, type Tower, type TowerColors } from "../lib/tower";
@@ -22,6 +22,9 @@ const fieldEl = $<HTMLElement>("field");
 const ascentEl = $<HTMLElement>("ascent");
 const heroLineEl = $<HTMLElement>("hero-line");
 const revealEyebrowEl = $<HTMLElement>("reveal-eyebrow");
+const heroSubEl = $<HTMLElement>("hero-sub");
+const localTopEl = $<HTMLElement>("local-top");
+const localCountryEl = $<HTMLElement>("local-country");
 const odoNumEl = $<HTMLElement>("odo-num");
 const odoLabEl = $<HTMLElement>("odo-lab");
 const guessUiEl = $<HTMLElement>("guess-ui");
@@ -143,7 +146,7 @@ function renderWhere(amount: number) {
 // ── ASCENT: the elevator with no top floor ───────────────────────────────────
 const TOWER_C: TowerColors = {
   wall: "var(--color-line)", crowd: "var(--color-ink)", you: "var(--color-accent)",
-  rich: "var(--color-muted)", ink: "var(--color-ink)", muted: "var(--color-muted)", guess: "var(--color-ink)",
+  rich: "var(--color-muted)", ink: "var(--color-ink)", muted: "var(--color-muted)", guess: "var(--color-muted)",
   paper: "var(--color-paper)",
 };
 let camSvg: SVGSVGElement | null = null;
@@ -183,9 +186,13 @@ function dailyOf(amount: number): number {
   return annual / 365 / (current.fx ?? current.ppp2021);
 }
 
-/** (Re)build the shaft SVG. YOU + odometer live in the fixed car overlay (HTML). */
-function renderTower(youDaily: number, guessDaily?: number) {
+/** (Re)build the shaft SVG. YOU + odometer live in the fixed car overlay (HTML).
+ *  `reveal` (the post-lock-in shaft) quiets ordinary floors and bakes the labeled
+ *  YOU + guess pills, which the reveal fades in on landing. */
+function renderTower(youDaily: number, guessDaily?: number, reveal = false) {
   const t: Tower = buildTower(cdfFor(), youDaily, W.worldPopulation, 3200);
+  const youLabel = reveal ? `YOU · top ${formatTopPercent(topAt(youDaily))}` : undefined;
+  const guessTopLabel = guessDaily != null ? `GUESS · top ${formatTopPercent(topAt(guessDaily))}` : undefined;
   fieldEl.innerHTML =
     // slice (not meet): the shaft box is ~2px narrower than the viewBox (the .shaft
     // borders), so meet letterboxes vertically and "54% of the box" drifts ~1.4px off
@@ -194,7 +201,7 @@ function renderTower(youDaily: number, guessDaily?: number) {
     // 1:1 to viewBox-y. That's also what the puck/pointer math assumes. Only dead
     // horizontal margin (beyond the ±80 walls) gets cropped.
     `<svg viewBox="${-VIEW_W / 2} ${camYFor(youDaily)} ${VIEW_W} ${VIEW_H}" preserveAspectRatio="xMidYMid slice">` +
-    `${towerBody(t, TOWER_C, { live: true, hideYou: true, guessDaily })}</svg>`;
+    `${towerBody(t, TOWER_C, { live: true, hideYou: true, guessDaily, quietFloors: reveal, youLabel, guessTopLabel })}</svg>`;
   camSvg = fieldEl.querySelector("svg");
   blurEl = fieldEl.querySelector("#vblur-b");
 }
@@ -208,7 +215,9 @@ function setOdo(income: number) {
     odoNumEl.textContent = fmtMult(income / Math.max(dailyOf(curAmount), 1e-6));
     odoLabEl.textContent = " your income";
   } else {
-    odoNumEl.textContent = fmtPeople(W.worldPopulation * fracBelow(cdfFor(), income));
+    // abbreviated ("6.8 billion") so the chip stays small + legible over the shaft,
+    // instead of a 13-digit number jammed against the dots.
+    odoNumEl.textContent = formatPeople(W.worldPopulation * fracBelow(cdfFor(), income));
     odoLabEl.textContent = " people below";
   }
 }
@@ -311,8 +320,9 @@ function refresh(amount: number) {
   renderPerspectives(buildPerspectives(W, current, amount, last, effMode()));
   renderWhere(amount);
   const d = dailyOf(amount);
-  renderTower(d);
+  renderTower(d, undefined, phase === "done"); // keep the landed styling when exploring / switching country
   setCam(d); setOdo(d); setHeadline(d);
+  if (phase === "done") setHeroSub();
   sliderEl.value = String(dailyToSlider(d));
   sliderTopEl.textContent = `global top ${formatTopPercent(last.globalTop)}`;
   sliderAmtEl.textContent = `${formatCurrency(amount, current.currency)}/${current.period === "monthly" ? "mo" : "yr"}`;
@@ -378,6 +388,10 @@ guessPuckEl.addEventListener("keydown", (e) => {
 guessGoEl.addEventListener("click", () => { ensureAudio(); startAscent(); }); // gesture → audio allowed
 
 // ── the ride + the doors ─────────────────────────────────────────────────────
+// One climb, one destination. We ride the ground → the TRUE rank exactly once and
+// the camera never leaves it again: the guess is a line you visibly PASS during the
+// climb (a muted, labeled mark), and the gap is read from the two persistent marks
+// + the gap sentence — no confusing away-and-back trip.
 function startAscent() {
   if (!current || phase !== "guess") return;
   phase = "ride";
@@ -387,14 +401,17 @@ function startAscent() {
   guessUiEl.classList.add("hidden");
   tailMode = false;
   const youDaily = dailyOf(curAmount);
-  renderTower(youDaily, guessDaily); // now bake the guess ghost-line into the shaft
+  // when the guess basically nails it, the marks would overlap — suppress the
+  // separate guess mark and let the "you nailed it" copy carry it.
+  const nailed = Math.abs(worldY(youDaily) - worldY(guessDaily)) < 14;
+  renderTower(youDaily, nailed ? undefined : guessDaily, true); // bake the reveal shaft (quiet floors, YOU + guess pills)
 
   if (reduceMotion) { setCam(youDaily); setOdo(youDaily); setHeadline(youDaily); revealEyebrowEl.textContent = "You're in the global"; finishReveal(); return; }
 
   const bottom = cdfFor()[0][0];
   setCam(bottom); setOdo(bottom); setHeadline(bottom);
   ascentEl.classList.add("riding");
-  revealEyebrowEl.textContent = "ascending…";
+  revealEyebrowEl.textContent = "climbing past everyone…";
   ride(bottom, youDaily, 2800, doorsOpen);
 }
 
@@ -413,47 +430,36 @@ function skipToYou() {
 function doorsOpen() {
   ascentEl.classList.remove("riding");
   const youDaily = dailyOf(curAmount);
-  setCam(youDaily); setOdo(youDaily); setHeadline(youDaily);
+  setCam(youDaily); setOdo(youDaily); setHeadline(youDaily); // lock the TRUE rank — never written again
   revealEyebrowEl.textContent = "You're in the global";
   if (!reduceMotion) { ascentEl.classList.add("arrived"); setTimeout(() => ascentEl.classList.remove("arrived"), 800); }
   try { navigator.vibrate?.(14); } catch { /* no haptics */ }
   land();
-  setTimeout(gapReveal, 950);
-}
-
-/** The payoff: travel from the truth down (or up) to the guess and back — the
- *  length of the trip IS how wrong you were — then settle and call it out. */
-function gapReveal() {
-  if (phase !== "ride") return;
-  const youDaily = dailyOf(curAmount);
-  const span = Math.abs(worldY(youDaily) - worldY(guessDaily));
-  if (span < 10) { finishReveal(); return; } // basically nailed it — skip the trip
-  const dur = Math.min(1500, 650 + span * 2);
-  revealEyebrowEl.textContent = "and you guessed…";
-  ride(youDaily, guessDaily, dur, () => {
-    revealEyebrowEl.textContent = `you guessed top ${formatTopPercent(topAt(guessDaily))}`;
-    try { navigator.vibrate?.(8); } catch { /* none */ }
-    setTimeout(() => {
-      if (phase !== "ride") return; // skipped during the hold
-      ride(guessDaily, youDaily, dur, () => {
-        revealEyebrowEl.textContent = "You're in the global";
-        setHeadline(youDaily);
-        finishReveal();
-      });
-    }, 850);
-  });
+  // a short beat on the truth, then settle in the supporting content — no second ride.
+  setTimeout(finishReveal, 650);
 }
 
 function finishReveal() {
   if (phase === "done") return;
   phase = "done";
+  ascentEl.classList.add("landed"); // reveal the baked YOU pill
+  setHeroSub(); //                     the home-country rank under the hero
   showGapText();
-  continueUpEl.classList.remove("hidden");
   exploreEl.classList.remove("hidden");
   sliderEl.value = String(dailyToSlider(dailyOf(curAmount)));
   sliderTopEl.textContent = `global top ${formatTopPercent(last!.globalTop)}`;
   sliderAmtEl.textContent = `${formatCurrency(curAmount, current!.currency)}/${current!.period === "monthly" ? "mo" : "yr"}`;
   staggerLines();
+  // the "keep going" lure arrives a beat after the gap so it doesn't crowd the payoff.
+  setTimeout(() => continueUpEl.classList.remove("hidden"), reduceMotion ? 0 : 550);
+}
+
+/** Set (or hide) the home-country rank line under the hero. */
+function setHeroSub() {
+  if (!last || !current || !(last.localTop > 0)) { heroSubEl.classList.remove("show"); return; }
+  localTopEl.textContent = formatTopPercent(last.localTop);
+  localCountryEl.textContent = current.name;
+  heroSubEl.classList.add("show");
 }
 
 function showGapText() {
@@ -465,7 +471,7 @@ function showGapText() {
   } else {
     const dir = actualTop < guessTop ? "richer" : "poorer";
     gapEl.innerHTML =
-      `you guessed <b class="text-ink">top ${formatTopPercent(guessTop)}</b>. youre actually <b class="text-accent">top ${formatTopPercent(actualTop)}</b>. thats <b class="text-ink">${fmtPeople(diff)}</b> people off, way ${dir} than you thought.`;
+      `you guessed <b class="text-ink">top ${formatTopPercent(guessTop)}</b>. youre actually <b class="text-accent">top ${formatTopPercent(actualTop)}</b>. thats <b class="text-ink">${formatPeople(diff)}</b> people off, way ${dir} than you thought.`;
   }
 }
 
@@ -474,6 +480,7 @@ continueBtnEl.addEventListener("click", () => {
   if (!camSvg || tailMode) return;
   tailMode = true;
   continueUpEl.classList.add("hidden");
+  heroSubEl.classList.remove("show"); // the home rank is about your floor, not the climb to Elon
   revealEyebrowEl.textContent = "flying past everyone…";
   const youDaily = dailyOf(curAmount);
   // a slow, STEADY climb past Shah Rukh Khan, MrBeast, BTS, Ronaldo, Ambani, Bezos… so you can
@@ -495,12 +502,13 @@ function showReveal(r: RevealData, amount: number) {
   // guess phase: a static shaft framed across the human range; drag to place
   ascentEl.classList.add("guessing");
   reveal.classList.add("guessing");
-  ascentEl.classList.remove("riding", "arrived");
+  ascentEl.classList.remove("riding", "arrived", "landed");
   guessPuckEl.classList.remove("touched");
   guessUiEl.classList.remove("hidden");
   exploreEl.classList.add("hidden");
   gapEl.classList.add("hidden");
   continueUpEl.classList.add("hidden");
+  heroSubEl.classList.remove("show");
   revealEyebrowEl.textContent = "Before the doors open…";
   heroLineEl.textContent = "where do you rank?";
 
@@ -521,7 +529,8 @@ function showReveal(r: RevealData, amount: number) {
 function resetToForm() {
   reveal.classList.add("hidden");
   reveal.classList.remove("show", "guessing");
-  ascentEl.classList.remove("riding", "arrived", "guessing");
+  ascentEl.classList.remove("riding", "arrived", "guessing", "landed");
+  heroSubEl.classList.remove("show");
   sharePanelEl.classList.add("hidden");
   rideId++;
   fieldEl.innerHTML = "";
