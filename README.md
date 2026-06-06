@@ -19,7 +19,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="docs/assets/readme/incomerank-header-poster.png">
-    <img alt="Income Rank rides your income up a log-scale column of everyone on Earth, lands on your global percentile, then keeps climbing past creators, athletes and billionaires from around the world all the way to Elon Musk." src="docs/assets/readme/incomerank-header.gif" width="900">
+    <img alt="Income Rank rides your income up a log-scale column of everyone on Earth, lands on your global percentile, then keeps climbing past creators, athletes and billionaires from around the world all the way to Elon Musk." src="docs/assets/readme/incomerank-header.gif?v=2" width="900">
   </picture>
 </p>
 
