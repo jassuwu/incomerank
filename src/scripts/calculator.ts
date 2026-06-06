@@ -214,15 +214,19 @@ function setHeadline(income: number) {
   }
 }
 
-const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3); // fast launch → settle
-const easeLinear = (x: number) => x; //                       steady, readable pace
+// accelerate from rest, decelerate to a stop — how an elevator actually moves.
+const easeInOutCubic = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const easeLinear = (x: number) => x; // steady, readable pace (the famous-tail climb)
+const BLUR_K = 8; //   motion-blur per unit speed (worldY / ms)
+const BLUR_MAX = 4;
 
 /** Animate the car along the log-income axis (the ride). Cancelable via rideId. */
-function ride(from: number, to: number, ms: number, onDone: () => void, ease = easeOutCubic) {
+function ride(from: number, to: number, ms: number, onDone: () => void, ease = easeInOutCubic) {
   const myId = ++rideId;
   const lf = Math.log10(Math.max(from, 1e-6)), lt = Math.log10(Math.max(to, 1e-6));
   const t0 = performance.now();
   let prevY = worldY(from);
+  let lastNow = t0;
   let notchAcc = 0;
   const step = (now: number) => {
     if (myId !== rideId) return; // superseded (skipped or restarted)
@@ -230,7 +234,10 @@ function ride(from: number, to: number, ms: number, onDone: () => void, ease = e
     const inc = Math.pow(10, lf + (lt - lf) * ease(p));
     const wy = worldY(inc);
     const d = Math.abs(wy - prevY);
-    setBlur(Math.min(14, d * 1.15)); // speed → vertical motion blur
+    // blur tracks real speed (worldY per ms), so it's identical at 60 or 120 Hz
+    // and naturally ramps with the ease — none at rest, most at the fastest moment.
+    setBlur(Math.min(BLUR_MAX, (d / Math.max(1, now - lastNow)) * BLUR_K));
+    lastNow = now;
     // one ratchet tick per notch of travel → machine-guns fast, slows as it lands
     notchAcc += d;
     let fired = 0;
