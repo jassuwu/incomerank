@@ -115,22 +115,37 @@ flat white Melbourne ~$3.4, pint London ~$7, Bali villa ~$70/night, Lisbon 1-BR 
 ## Famous-income tail ("keep going" → Elon Musk)
 
 When you climb past your own floor, the tower passes a ladder of globally recognizable
-people and stops at the ceiling, **Elon Musk**. These are a deliberately rough yardstick
-(`FAMOUS` in `src/lib/tower.ts`), **mixed-basis and disclosed**, estimated for 2025–2026:
+people and stops at the ceiling, **Elon Musk**. The roster is deliberately **international** —
+names people recognize across India, Korea, Japan, Africa and the West, not just Silicon
+Valley. These are a deliberately rough yardstick (`FAMOUS` in `src/lib/tower.ts`),
+**mixed-basis and disclosed**, estimated for 2025–2026:
 
-| Person | ~$/day | Basis |
-|---|---|---|
-| MrBeast | $233K | annual **earnings** ÷ 365 (Forbes Top Creators) |
-| Cristiano Ronaldo | $750K | annual **earnings** ÷ 365 (Forbes Highest-Paid Athletes 2025) |
-| Taylor Swift | $1.1M | annual **earnings** ÷ 365 (Forbes: ~$400M pretax, 2024 Eras Tour year) |
-| Larry Ellison | $16M | year-over-year **wealth growth** ÷ 365 (Forbes Billionaires 2026) |
-| Jeff Bezos | $120M | **wealth growth** ÷ 365 (Forbes Billionaires 2026) |
-| **Elon Musk** | **$1.4B** | **wealth growth** ÷ 365 (Forbes Billionaires 2026: ~$839B, up ~$500B YoY) |
+| Person | Country | ~$/day | Basis |
+|---|---|---|---|
+| Shah Rukh Khan | 🇮🇳 India | $110K | annual **earnings** ÷ 365 (per-film fees + endorsements + KKR/Red Chillies; ~$30–40M/yr est.) |
+| MrBeast | 🇺🇸 US | $233K | annual **earnings** ÷ 365 (Forbes Top Creators; ~$85M, content business) |
+| BTS | 🇰🇷 S. Korea | $370K | **peak** annual group **earnings** ÷ 365 (~$130M peak era; group income ~$0 during 2023–25 military hiatus) |
+| Cristiano Ronaldo | 🇵🇹 Portugal | $750K | annual **earnings** ÷ 365 (Forbes Highest-Paid Athletes 2025 #1, ~$275M) |
+| Taylor Swift | 🇺🇸 US | $1.1M | annual **earnings** ÷ 365 (~$400M pretax, Eras Tour peak year) |
+| Aliko Dangote | 🇳🇬 Nigeria | $18M | year-over-year **wealth growth** ÷ 365 (Bloomberg 2026: ~$36B, refinery re-rating, +~$6B YoY) |
+| Tadashi Yanai | 🇯🇵 Japan | $30M | **wealth growth** ÷ 365 (Forbes 2026: ~$62B, Uniqlo/Fast Retailing, +~$11B YoY) |
+| Mukesh Ambani | 🇮🇳 India | $50M | **wealth growth** ÷ 365 (Bloomberg 2026: ~$88B; **representative up-year** — see note) |
+| Jeff Bezos | 🇺🇸 US | $120M | **wealth growth** ÷ 365 (Bloomberg 2026: ~$270B) |
+| **Elon Musk** | 🇺🇸 US | **$1.4B** | **wealth growth** ÷ 365 (Forbes 2026: ~$834B, up ~$500B YoY) |
 
 For creators/athletes/entertainers this is real **annual earnings** (salary + endorsements +
 business). For billionaires it is **year-over-year wealth growth** — paper gains on stock, not
-salary; it swings wildly day to day and can be negative. So the billionaire rungs are **not**
-apples-to-apples with a paycheck. Treat all of these as cited order-of-magnitude estimates.
+salary; it swings wildly day to day and **can be negative**. So the billionaire rungs are
+**not** apples-to-apples with a paycheck. Treat all of these as cited order-of-magnitude
+estimates.
+
+**Soft figures, called out honestly:** **Mukesh Ambani**'s net worth actually *fell* in 2026
+(Reliance share weakness, ~$105B → ~$88B), so a literal 2026 wealth-growth figure would be
+**negative** — his $50M/day rung is a representative recent up-year, the cleanest live example
+of why the billionaire basis can go negative. **BTS** is shown at peak-era group earnings; the
+group's income was effectively ~$0 during the 2023–mid-2025 military hiatus (all members
+discharged by June 2025). **Shah Rukh Khan**'s annual *earnings* are the soft part (no clean
+Forbes line; his ~$1.4B net worth / newly-billionaire status is well sourced via Hurun).
 
 Sources: [Forbes World's Billionaires 2026](https://www.forbes.com/real-time-billionaires/) ·
 [Forbes Highest-Paid Athletes](https://www.forbes.com/athletes/) · Forbes Top Creators /

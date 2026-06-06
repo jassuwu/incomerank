@@ -107,11 +107,16 @@ export function blurAtFrame(f: number): number {
 }
 
 // ── the famous ladder (for the right-side caption during the climb) ───────────
+// Mirrors FAMOUS in src/lib/tower.ts — keep in sync (re-render the video on change).
 export const FAMOUS: { daily: number; name: string }[] = [
+  { daily: 110_000, name: "Shah Rukh Khan" },
   { daily: 233_000, name: "MrBeast" },
+  { daily: 370_000, name: "BTS" },
   { daily: 753_000, name: "Cristiano Ronaldo" },
   { daily: 1_100_000, name: "Taylor Swift" },
-  { daily: 16_400_000, name: "Larry Ellison" },
+  { daily: 18_000_000, name: "Aliko Dangote" },
+  { daily: 30_000_000, name: "Tadashi Yanai" },
+  { daily: 50_000_000, name: "Mukesh Ambani" },
   { daily: 120_000_000, name: "Jeff Bezos" },
   { daily: 1_360_000_000, name: "Elon Musk" },
 ];
