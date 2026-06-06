@@ -1,0 +1,86 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import world from "../../data/world.json";
+import type { WorldData } from "../../lib/types";
+import { formatPeople } from "../../lib/rank-copy";
+import { globalPerspectives } from "../../lib/perspectives";
+import { towerFrame, incomeAtF, type TowerColors } from "../../lib/tower";
+
+// One static page per global-rank bucket (1..99), each with its own OG image.
+export function getStaticPaths() {
+  return Array.from({ length: 99 }, (_, i) => ({ params: { bucket: String(i + 1) } }));
+}
+
+const { bucket } = Astro.params;
+const b = Number(bucket);
+const W = world as unknown as WorldData;
+const peopleLabel = formatPeople(W.worldPopulation * (1 - b / 100));
+const persp = globalPerspectives(W, b);
+const cdfNom = (world as any).cdfNom as [number, number][];
+const TC: TowerColors = { wall: "var(--color-line)", crowd: "var(--color-ink)", you: "var(--color-accent)", rich: "var(--color-muted)", ink: "var(--color-ink)", muted: "var(--color-muted)", guess: "var(--color-muted)", paper: "var(--color-paper)" };
+const tower = towerFrame(cdfNom, incomeAtF(cdfNom, 1 - b / 100), W.worldPopulation, TC);
+
+const title = `someone's in the global top ${b}% by income`;
+const description = `${persp[1] ?? `~${peopleLabel} people live on less.`} see where you stack up.`;
+---
+
+<Layout title={title} description={description} ogImage={`/og/top-${b}.png`} canonical={`/r/${b}`}>
+  <main class="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-6 py-7">
+    <div class="flex items-center justify-between border-b border-line pb-3">
+      <span class="eyebrow">Income Rank</span>
+      <span class="eyebrow">A shared rank</span>
+    </div>
+
+    <div class="flex flex-1 flex-col justify-center py-10">
+      <p id="eyebrow" class="eyebrow">someone's in the</p>
+      <h1 class="display text-6xl leading-none sm:text-7xl">
+        top <span class="text-accent">{b}%</span>
+      </h1>
+      <p id="gap-line" class="mt-3 max-w-lg text-base leading-snug text-ink-soft" data-pop={W.worldPopulation} hidden></p>
+
+      <div class="mx-auto mt-8 w-full max-w-xs" aria-hidden="true">
+        <svg viewBox={tower.viewBox} preserveAspectRatio="xMidYMid meet" class="block h-auto w-full" style="aspect-ratio:232/300" set:html={tower.body} />
+      </div>
+      <p class="mt-3 text-center text-xs text-muted">income is altitude · <span class="text-accent">●</span> them, riding</p>
+
+      <blockquote class="display mt-8 max-w-lg border-l-2 border-accent pl-4 text-2xl leading-snug text-ink-soft">
+        {persp[0]}
+      </blockquote>
+      <ul class="mt-6 max-w-lg list-disc space-y-2 pl-5 text-[0.95rem] leading-relaxed text-muted marker:text-accent">
+        {persp.slice(1).map((l) => <li>{l}</li>)}
+      </ul>
+      <p id="contrast" class="mt-6 text-sm text-muted" hidden></p>
+
+      <a href="/" class="mt-9 inline-flex w-fit items-center gap-2 rounded-full bg-ink px-6 py-3 font-medium text-paper transition hover:bg-accent">
+        Can you guess yours? <span aria-hidden="true">→</span>
+      </a>
+      <p class="mt-4 text-xs text-muted">an estimate from World Bank data. your income never leaves your device.</p>
+    </div>
+  </main>
+
+  <script>
+    import { ordinal } from "../../lib/rank-copy";
+    const p = new URLSearchParams(location.search);
+    const l = Number(p.get("l"));
+    const g = Number(p.get("g"));
+    const bucket = Number(location.pathname.split("/").filter(Boolean).pop());
+
+    // the guess-gap dare: if the sharer passed their guess, lead with how wrong they were
+    const gapEl = document.getElementById("gap-line") as HTMLElement | null;
+    if (gapEl && g >= 1 && g <= 99 && bucket >= 1 && bucket <= 99 && Math.abs(g - bucket) >= 2) {
+      const pop = Number(gapEl.dataset.pop || "0");
+      const diff = Math.round((pop * Math.abs(g - bucket)) / 100).toLocaleString("en-US");
+      const dir = bucket < g ? "richer" : "poorer";
+      const eb = document.getElementById("eyebrow");
+      if (eb) eb.textContent = `they guessed top ${g}%, but they're`;
+      gapEl.innerHTML = `off by <b class="text-ink">${diff} people</b>. way ${dir} than they thought. think you can beat that?`;
+      gapEl.hidden = false;
+    }
+
+    if (l >= 1 && l <= 99 && bucket >= 1 && bucket <= 99) {
+      const el = document.getElementById("contrast")!;
+      el.textContent = `At home they're ${ordinal(l)} · on Earth, ${ordinal(100 - bucket)}.`;
+      el.hidden = false;
+    }
+  </script>
+</Layout>
