@@ -4,7 +4,7 @@ import { parseAmount, currencySymbol, formatCurrency } from "../lib/format";
 import { computeReveal, formatTopPercent, type RevealData } from "../lib/rank-copy";
 import { buildPerspectives } from "../lib/perspectives";
 import { whereYoudRank } from "../lib/where";
-import { buildTower, towerBody, camYFor, worldY, incomeAtF, fracBelow, DECADE, VIEW_W, VIEW_H, TOWER_PEAK_DAILY, type Tower, type TowerColors } from "../lib/tower";
+import { buildTower, towerBody, camYFor, worldY, incomeAtF, fracBelow, DECADE, VIEW_W, VIEW_H, GUESS_VIEW_H, TOWER_PEAK_DAILY, type Tower, type TowerColors } from "../lib/tower";
 import { initSoundPref, ensureAudio, tick, land, soundEnabled, setSoundEnabled } from "../lib/sound";
 
 const W = world as unknown as WorldData;
@@ -323,14 +323,14 @@ function refresh(amount: number) {
 function pointerToDaily(clientY: number): number {
   const rect = fieldEl.getBoundingClientRect();
   const pct = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-  const d = Math.pow(10, -(guessVy + pct * VIEW_H) / DECADE);
+  const d = Math.pow(10, -(guessVy + pct * GUESS_VIEW_H) / DECADE);
   return Math.max(guessLo, Math.min(GUESS_HI, d));
 }
 
 /** Place the puck + label at a guessed income. */
 function setGuess(daily: number) {
   guessDaily = daily;
-  const pct = (worldY(daily) - guessVy) / VIEW_H;
+  const pct = (worldY(daily) - guessVy) / GUESS_VIEW_H;
   guessPuckEl.style.top = `${(pct * 100).toFixed(2)}%`;
   const top = topAt(daily);
   guessLabEl.textContent = `top ${formatTopPercent(top)}`;
@@ -505,10 +505,10 @@ function showReveal(r: RevealData, amount: number) {
   heroLineEl.textContent = "where do you rank?";
 
   renderTower(dailyOf(amount)); // shaft with YOU hidden — no spoilers
-  guessVy = worldY(GUESS_HI); // frame the guess window: ~$3/day → $900/day
-  guessLo = Math.pow(10, -(guessVy + VIEW_H) / DECADE);
-  camSvg?.setAttribute("viewBox", `${-VIEW_W / 2} ${guessVy} ${VIEW_W} ${VIEW_H}`);
-  setGuess(Math.pow(10, -(guessVy + VIEW_H * 0.5) / DECADE)); // start the puck mid-shaft
+  guessVy = worldY(GUESS_HI); // frame the guess window: $900/day (top ~0.1%) at the top…
+  guessLo = Math.pow(10, -(guessVy + GUESS_VIEW_H) / DECADE); // …down to ~$0.5/day (top ~97%)
+  camSvg?.setAttribute("viewBox", `${-VIEW_W / 2} ${guessVy} ${VIEW_W} ${GUESS_VIEW_H}`);
+  setGuess(Math.pow(10, -(guessVy + GUESS_VIEW_H * 0.5) / DECADE)); // start the puck mid-shaft
 
   form.classList.add("opacity-0");
   const swap = () => {

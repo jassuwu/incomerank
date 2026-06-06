@@ -16,6 +16,11 @@ export const DECADE = 120; //   world units per 10× of income
 export const SHAFT_HALF = 80; // shaft half-width
 export const VIEW_W = 232; //    viewBox width (portrait shaft + label margins)
 export const VIEW_H = 300; //    viewBox height (~2.5 decades visible)
+// The guess phase frames a TALLER window than the ride so the puck can reach the
+// poor end of the distribution: 390 world-units (~3.25 decades) from $900/day spans
+// global top ~0.1% down to ~top 97% (a 300-unit window bottoms out at only top 56%).
+// Keep in sync with the `.ascent.guessing` aspect-ratio in index.astro.
+export const GUESS_VIEW_H = 390;
 export const CAR_FRAC = 0.54; // the car (your eye-line) sits this far down the frame
 
 export const worldY = (daily: number) => -DECADE * Math.log10(Math.max(daily, 1e-6));

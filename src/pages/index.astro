@@ -293,7 +293,10 @@ const list = countries as CountryIndexEntry[];
   /* guess phase: smaller prompt + tighter spacing so the shaft AND lock button
      are fully visible on one screen, every form factor. */
   #reveal.guessing .hero-h { font-size: clamp(1.5rem, 6vw, 2.25rem); line-height: 1.15; }
-  #reveal.guessing .ascent { height: min(48dvh, 112vw, 420px); margin-top: clamp(0.5rem, 2dvh, 1.25rem); }
+  /* the guess shaft frames a TALLER window (GUESS_VIEW_H=390 in tower.ts) so the puck
+     reaches down to ~top 97%; same height footprint, just a proportionally narrower
+     column. The aspect MUST match VIEW_W / GUESS_VIEW_H for the puck math to land. */
+  #reveal.guessing .ascent { height: min(48dvh, 112vw, 420px); aspect-ratio: 232 / 390; margin-top: clamp(0.5rem, 2dvh, 1.25rem); }
   #reveal.guessing #guess-ui { margin-top: clamp(0.6rem, 2dvh, 1.1rem); }
   /* during the guess, the post-reveal content isn't in play — collapse it so the
      guess screen fits exactly with nothing to scroll into. */
