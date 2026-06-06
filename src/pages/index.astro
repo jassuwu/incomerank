@@ -1,0 +1,438 @@
+---
+import Layout from "../layouts/Layout.astro";
+import countries from "../data/countries.index.json";
+import type { CountryIndexEntry } from "../lib/types";
+
+const list = countries as CountryIndexEntry[];
+---
+
+<Layout>
+  <main class="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-6 py-7">
+    <div class="flex items-center justify-between border-b border-line pb-3">
+      <span class="eyebrow">Income Rank</span>
+      <div class="flex items-center gap-4">
+        <button id="sound" type="button" role="switch" aria-checked="true" aria-label="Sound" title="Sound on / off" class="snd-btn text-muted transition hover:text-ink">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H3v6h3l5 4z" />
+            <g class="snd-on"><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M19 5a9 9 0 0 1 0 14" /></g>
+            <g class="snd-off"><line x1="16" y1="9" x2="22" y2="15" /><line x1="22" y1="9" x2="16" y2="15" /></g>
+          </svg>
+        </button>
+        <button id="ppp-switch" type="button" role="switch" aria-checked="false" aria-label="Adjust for local prices (purchasing power)" title="tap: market exchange rates or local prices (PPP)" class="basis-toggle flex select-none items-center gap-1.5 text-xs font-semibold text-muted transition hover:text-ink">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18" />
+            <path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18" />
+          </svg>
+          <span id="basis-lab">market</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="stage flex flex-1 flex-col justify-center py-6">
+      <!-- ── Input ─────────────────────────────────────────────────────── -->
+      <form id="calc" class="reveal-stage" novalidate>
+        <h1 class="display text-5xl leading-[0.95] sm:text-6xl">
+          how much<br />do you make?
+        </h1>
+
+        <div class="mt-10 flex items-baseline gap-3 border-b-2 border-ink pb-2 focus-within:border-accent">
+          <span id="cur" class="display text-3xl text-muted">$</span>
+          <input
+            id="amount"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            autofocus
+            placeholder="72,000"
+            class="display tabular w-full bg-transparent text-4xl outline-none placeholder:text-faint"
+          />
+          <select id="period" class="shrink-0 cursor-pointer bg-transparent text-sm text-muted outline-none hover:text-ink">
+            <option value="annual">per year</option>
+            <option value="monthly">per month</option>
+          </select>
+        </div>
+
+        <label class="mt-5 flex items-center gap-2 text-sm text-muted">
+          <span class="text-accent">◍</span>
+          <select id="country" class="cursor-pointer bg-transparent text-ink outline-none">
+            {list.map((c) => (
+              <option value={c.iso} data-iso2={c.iso2} data-currency={c.currency} data-period={c.period}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <button
+          type="submit"
+          class="mt-9 inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 font-medium text-paper transition hover:bg-accent active:scale-[0.99]"
+        >
+          find my rank <span aria-hidden="true">→</span>
+        </button>
+        <p id="err" class="mt-3 h-4 text-sm text-accent-ink" role="alert" aria-live="polite"></p>
+      </form>
+
+      <!-- ── Reveal: ASCENT — the elevator with no top floor ───────────── -->
+      <section id="reveal" class="hidden" aria-live="polite">
+        <p id="reveal-eyebrow" class="eyebrow">Before the doors open…</p>
+        <h2 class="hero-h display text-6xl leading-none sm:text-7xl">
+          <span id="hero-line">guess your floor</span>
+        </h2>
+
+        <!-- the shaft + the car you ride in -->
+        <div id="ascent" class="ascent relative mx-auto mt-6 select-none">
+          <div id="field" class="shaft"></div>
+
+          <!-- the car: your eye-line, fixed over the shaft (ride + explore) -->
+          <div id="car" class="car">
+            <span class="car-dot"></span>
+            <div id="odo" class="odo"><b id="odo-num">…</b><span id="odo-lab"> people below you</span></div>
+          </div>
+
+          <!-- the draggable guess handle (guess phase) -->
+          <div
+            id="guess-puck"
+            class="guess-puck"
+            role="slider"
+            tabindex="0"
+            aria-label="guess how high you rank, drag up or down"
+            aria-valuemin="1"
+            aria-valuemax="99"
+            aria-valuenow="50"
+            aria-valuetext="global top 50%"
+          >
+            <span class="puck-line"></span>
+            <span class="puck-dot"></span>
+            <span class="puck-lab"><span class="puck-chev">↕</span> me? <b id="guess-lab">top 50%</b></span>
+          </div>
+
+          <button id="continue-up" class="continue-up hidden" type="button">↑ keep going... who's up top?</button>
+        </div>
+
+        <!-- guess prompt -->
+        <div id="guess-ui" class="mt-4 max-w-sm mx-auto text-center">
+          <p id="guess-instr" class="text-sm leading-snug text-muted">
+            drag yourself <strong class="text-ink">up the tower</strong>. how high do you reckon you land?
+          </p>
+          <button id="guess-go" class="mt-3 inline-flex rounded-full bg-ink px-6 py-2.5 font-medium text-paper transition hover:bg-accent active:scale-[0.99]" type="button">
+            lock it in →
+          </button>
+        </div>
+
+        <!-- the gap detonation (post-ride) -->
+        <p id="gap" class="rline mt-5 max-w-sm mx-auto hidden text-center text-sm"></p>
+
+        <!-- explore (post-ride) -->
+        <div id="explore" class="rline mt-5 max-w-sm mx-auto hidden">
+          <input id="slider" type="range" min="0" max="1000" value="500" class="w-full cursor-pointer accent-accent" aria-label="Explore other incomes" />
+          <p class="mt-1 text-center text-xs text-muted">
+            drag to play with it. at <span id="slider-amt" class="text-ink">…</span> you'd be <span id="slider-top" class="text-ink">…</span>
+          </p>
+        </div>
+
+        <blockquote id="persp" class="rline display mt-8 max-w-lg border-l-2 border-accent pl-4 text-2xl leading-snug text-ink-soft"></blockquote>
+        <ul id="persp-list" class="rline mt-6 max-w-lg list-disc space-y-2 pl-5 text-[0.95rem] leading-relaxed text-muted marker:text-accent"></ul>
+
+        <p id="buying" class="rline mt-6 text-sm text-muted"></p>
+
+        <div id="where" class="rline mt-9 max-w-lg">
+          <p class="eyebrow">Where you'd be rich</p>
+          <ul id="where-list" class="mt-3 divide-y divide-line text-sm"></ul>
+          <p id="where-mode-note" class="mt-2 text-xs text-faint"></p>
+          <p id="where-note" class="mt-2 text-xs text-muted"></p>
+        </div>
+
+        <details id="method" class="rline mt-9 max-w-lg border-t border-line pt-5 text-sm">
+          <summary class="method-summary eyebrow flex cursor-pointer list-none items-center gap-1.5 hover:text-accent">Sources &amp; method <span class="method-chev" aria-hidden="true">▾</span></summary>
+          <p class="mt-3 leading-relaxed text-muted">
+            the numbers aren't mine. i take your <strong class="text-ink">gross</strong> income,
+            turn it into 2021 PPP dollars, and look it up in the World Bank's income data for
+            <strong class="text-ink">171 countries</strong> (~7.9 billion people). default is market
+            exchange rates. flip <strong class="text-ink">PPP</strong> on to adjust for local prices
+            instead. fair warning: i count you as a household of one, most countries report
+            after-tax income, and it counts everyone alive incl. kids... so your rank is probably a
+            little <strong class="text-ink">flattering</strong>. it's an estimate, not an exact salary rank.
+          </p>
+          <dl class="mt-4 space-y-2">
+            <div class="flex justify-between gap-4 border-b border-line/60 pb-2">
+              <dt class="text-muted">Source</dt>
+              <dd class="text-right text-ink-soft">World Bank PIP percentiles · 2021 PPP</dd>
+            </div>
+            <div class="flex justify-between gap-4 border-b border-line/60 pb-2">
+              <dt class="text-muted">Cross-checked vs OWID &amp; GWWC</dt>
+              <dd class="text-right text-ink-soft">global median &amp; top-10% agree to ~1%</dd>
+            </div>
+            <div class="flex justify-between gap-4 border-b border-line/60 pb-2">
+              <dt class="text-muted">Extreme top tail (&gt; top 1%)</dt>
+              <dd id="tail-note" class="text-right text-ink-soft">shaped to <a href="https://wid.world/" target="_blank" rel="noopener" class="text-accent hover:underline">WID.world</a> top incomes</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted">Famous names (the climb)</dt>
+              <dd class="text-right text-ink-soft">Forbes earnings &amp; wealth growth · est.</dd>
+            </div>
+          </dl>
+          <p class="mt-3 leading-relaxed text-muted">
+            the famous folks up top are just a fun yardstick. for the creator/athlete/entertainer
+            it's their yearly <strong class="text-ink">earnings</strong> ÷ 365. for the billionaires
+            it's how much their net worth grew in a year ÷ 365 (paper gains, not a paycheck...
+            swings hard, sometimes negative). rough ballparks, not pay stubs.
+          </p>
+          <p class="mt-4 text-xs text-muted">
+            check it yourself:
+            <a href="https://datacatalog.worldbank.org/search/dataset/0063646" target="_blank" rel="noopener" class="text-accent hover:underline">World Bank PIP</a> ·
+            <a href="https://ourworldindata.org/grapher/daily-median-income" target="_blank" rel="noopener" class="text-accent hover:underline">Our World in Data</a> ·
+            <a href="https://www.givingwhatwecan.org/how-rich-am-i-methodology" target="_blank" rel="noopener" class="text-accent hover:underline">Giving What We Can</a> ·
+            <a href="https://www.forbes.com/real-time-billionaires/" target="_blank" rel="noopener" class="text-accent hover:underline">Forbes</a>
+          </p>
+        </details>
+
+        <div class="rline mt-9 flex gap-3">
+          <button id="share" class="rounded-full bg-ink px-6 py-3 font-medium text-paper transition hover:bg-accent">
+            share my card
+          </button>
+          <button id="again" class="rounded-full border border-line px-6 py-3 font-medium text-muted transition hover:text-ink">
+            again
+          </button>
+        </div>
+
+        <!-- share-card preview (built on demand) -->
+        <div id="share-panel" class="rline mt-5 hidden max-w-sm">
+          <img id="share-img" alt="Your Income Rank card" class="mx-auto block w-full max-w-[20rem] rounded-xl border border-line shadow-sm" />
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <button id="share-send" class="rounded-full bg-accent px-5 py-2.5 font-medium text-paper transition hover:bg-ink">share</button>
+            <button id="share-save" class="rounded-full border border-line px-5 py-2.5 font-medium text-muted transition hover:text-ink">save image</button>
+            <button id="share-copy" class="rounded-full border border-line px-5 py-2.5 font-medium text-muted transition hover:text-ink">copy link</button>
+          </div>
+          <p class="mt-2 text-xs text-faint">your income's not on the card or the link. just your rank.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    import "../scripts/calculator.ts";
+  </script>
+</Layout>
+
+<style>
+  .reveal-stage {
+    transition: opacity 0.32s ease, transform 0.32s ease;
+  }
+  .rline {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  #reveal.show .rline {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* The rotating pull-quote fades when it swaps. */
+  #persp {
+    transition: opacity 0.2s ease;
+  }
+  #persp.fade {
+    opacity: 0;
+  }
+
+  /* ASCENT — the elevator with no top floor. Income is altitude; you ride a
+     glass car up the shaft of humanity, the world scrolls past, the camera is a
+     pure vertical pan (SVG viewBox) so type stays crisp at every floor. */
+  /* the shaft is sized by HEIGHT (viewport-aware) so the whole reveal always fits;
+     width follows the aspect. keeps the puck math exact (no letterboxing). */
+  .ascent {
+    touch-action: none;
+    position: relative;
+    margin-inline: auto;
+    height: min(52dvh, 116vw, 460px);
+    aspect-ratio: 232 / 300; /* VIEW_W / VIEW_H from tower.ts */
+    max-width: 100%;
+  }
+  .shaft {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    border-left: 1px solid var(--color-line);
+    border-right: 1px solid var(--color-line);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 91%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 91%, transparent);
+  }
+  .shaft svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  /* guess phase: smaller prompt + tighter spacing so the shaft AND lock button
+     are fully visible on one screen, every form factor. */
+  #reveal.guessing .hero-h { font-size: clamp(1.5rem, 6vw, 2.25rem); line-height: 1.15; }
+  #reveal.guessing .ascent { height: min(48dvh, 112vw, 420px); margin-top: clamp(0.5rem, 2dvh, 1.25rem); }
+  #reveal.guessing #guess-ui { margin-top: clamp(0.6rem, 2dvh, 1.1rem); }
+  /* during the guess, the post-reveal content isn't in play — collapse it so the
+     guess screen fits exactly with nothing to scroll into. */
+  #reveal.guessing .rline { display: none; }
+  /* short / landscape viewports: shrink everything (incl. page padding) so the
+     whole guess screen still fits with no scroll. */
+  @media (max-height: 600px) {
+    main { padding-block: 0.4rem !important; }
+    .stage { padding-block: 0.3rem !important; }
+    #reveal.guessing .hero-h { font-size: 1.1rem; }
+    #reveal.guessing .ascent { height: min(44dvh, 112vw, 250px); margin-top: 0.3rem; }
+    #reveal.guessing #guess-ui { margin-top: 0.4rem; }
+    #reveal.guessing #guess-instr { font-size: 0.74rem; line-height: 1.2; }
+    #reveal.guessing #guess-go { padding-top: 0.45rem; padding-bottom: 0.45rem; }
+  }
+  /* the car: your fixed eye-line at CAR_FRAC (54%) down the shaft */
+  .car {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 54%;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .car::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    background: var(--color-accent);
+    opacity: 0.92;
+  }
+  .car-dot {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 15px;
+    height: 15px;
+    transform: translate(-50%, -50%);
+    border-radius: 9999px;
+    background: var(--color-accent);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 22%, transparent);
+  }
+  .ascent.riding .car-dot { animation: youpulse 1.4s ease-in-out infinite; }
+  @keyframes youpulse {
+    0%, 100% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 22%, transparent); }
+    50% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--color-accent) 8%, transparent); }
+  }
+  /* the doors-open beat: the car lands with a flash */
+  .ascent.arrived .car-dot { animation: arrive 0.75s cubic-bezier(0.2, 0.9, 0.2, 1); }
+  .ascent.arrived .car::before { animation: carline 0.75s ease-out; }
+  @keyframes arrive {
+    0% { transform: translate(-50%, -50%) scale(2.6); box-shadow: 0 0 0 22px color-mix(in srgb, var(--color-accent) 30%, transparent); }
+    100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 22%, transparent); }
+  }
+  @keyframes carline {
+    0% { opacity: 0.2; transform: scaleX(0.2); }
+    60% { opacity: 1; }
+    100% { opacity: 0.92; transform: scaleX(1); }
+  }
+  .odo {
+    position: absolute;
+    left: 8px;
+    top: 11px;
+    font-size: 0.72rem;
+    line-height: 1.1;
+    color: var(--color-muted);
+    text-shadow: 0 0 6px var(--color-paper), 0 0 6px var(--color-paper);
+  }
+  .odo b { color: var(--color-ink); font-variant-numeric: tabular-nums; font-weight: 700; }
+  .continue-up {
+    position: absolute;
+    left: 50%;
+    top: 10px;
+    transform: translateX(-50%);
+    z-index: 3;
+    white-space: nowrap;
+    border-radius: 9999px;
+    border: 1px solid var(--color-line);
+    background: color-mix(in srgb, var(--color-paper) 86%, transparent);
+    padding: 0.4rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    backdrop-filter: blur(3px);
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .continue-up:hover { color: var(--color-accent); border-color: var(--color-accent); }
+
+  /* the guess handle — a vertical slider you drag up the tower (up = richer) */
+  .guess-puck {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 44px; /* generous thumb target */
+    transform: translateY(-50%);
+    z-index: 4;
+    cursor: grab;
+    touch-action: none;
+  }
+  .guess-puck:active { cursor: grabbing; }
+  .guess-puck:focus-visible { outline: none; }
+  .guess-puck:focus-visible .puck-dot { box-shadow: 0 0 0 4px var(--color-paper), 0 0 0 7px var(--color-accent); }
+  .puck-line {
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    height: 2px;
+    transform: translateY(-50%);
+    background: var(--color-accent);
+    opacity: 0.55;
+  }
+  .puck-dot {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 18px; height: 18px;
+    transform: translate(-50%, -50%);
+    border-radius: 9999px;
+    background: var(--color-accent);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 18%, transparent);
+  }
+  .puck-lab {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(16px, -50%);
+    white-space: nowrap;
+    border-radius: 9999px;
+    border: 1px solid var(--color-line);
+    background: var(--color-paper);
+    padding: 2px 9px;
+    font-size: 0.72rem;
+    color: var(--color-muted);
+  }
+  .puck-lab b { color: var(--color-ink); }
+  .puck-chev { color: var(--color-accent); font-weight: 700; }
+  /* an inviting bob until the user first grabs it */
+  .ascent.guessing .guess-puck:not(.touched) .puck-dot { animation: puckbob 1.8s ease-in-out infinite; }
+  @keyframes puckbob {
+    0%, 100% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 18%, transparent); }
+    50% { box-shadow: 0 0 0 11px color-mix(in srgb, var(--color-accent) 6%, transparent); }
+  }
+  /* the puck only exists during the guess phase */
+  .guess-puck { display: none; }
+  .ascent.guessing .guess-puck { display: block; }
+  .ascent.guessing .car { display: none; }
+
+  /* collapsible Sources & method */
+  .method-summary::-webkit-details-marker { display: none; }
+  .method-chev { display: inline-block; transition: transform 0.2s ease; }
+  #method[open] .method-chev { transform: rotate(180deg); }
+
+  /* sound toggle icon states */
+  .snd-off { display: none; }
+  #sound[aria-checked="false"] .snd-on { display: none; }
+  #sound[aria-checked="false"] .snd-off { display: inline; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal-stage,
+    .rline,
+    #persp,
+    .ascent.riding .car-dot,
+    .ascent.guessing .guess-puck .puck-dot {
+      transition: none;
+      animation: none;
+    }
+  }
+</style>
