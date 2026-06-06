@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+/* ── Editorial-paper design system (Tailwind v4 CSS-first config) ────────────
+   Warm bone paper, ink, one vermillion accent. Bricolage Grotesque for
+   display, Inter for body/figures. A data-zine, not a dashboard.             */
+@theme {
+  --color-paper: #f4f0e7;
+  --color-panel: #eae3d6;
+  --color-ink: #191512;
+  --color-ink-soft: #2c2620;
+  --color-muted: #6d655b;
+  --color-faint: #a59c8e;
+  --color-line: #d8d0c0;
+  --color-accent: #df2f1b;
+  --color-accent-ink: #b51f10;
+
+  --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque",
+    ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Fine paper grain — tactile, near-invisible, never in the way. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.04;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-paper);
+  }
+
+  /* Tabular figures keep the count-up reveal from jittering. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  .display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  /* Quiet lowercase label. */
+  .eyebrow {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-transform: lowercase;
+    color: var(--color-muted);
+  }
+}
