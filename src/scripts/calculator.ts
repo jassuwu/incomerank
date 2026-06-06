@@ -1,10 +1,9 @@
 import world from "../data/world.json";
 import type { CountryData, Mode, WorldData } from "../lib/types";
 import { parseAmount, currencySymbol, formatCurrency } from "../lib/format";
-import { computeReveal, buyingPowerLine, formatTopPercent, type RevealData } from "../lib/rank-copy";
-import { toDailyIntl } from "../lib/ppp";
+import { computeReveal, formatTopPercent, type RevealData } from "../lib/rank-copy";
 import { buildPerspectives } from "../lib/perspectives";
-import { whereYoudRank, nominalAvailable } from "../lib/where";
+import { whereYoudRank } from "../lib/where";
 import { buildTower, towerBody, camYFor, worldY, incomeAtF, fracBelow, DECADE, VIEW_W, VIEW_H, TOWER_PEAK_DAILY, type Tower, type TowerColors } from "../lib/tower";
 import { initSoundPref, ensureAudio, tick, land, soundEnabled, setSoundEnabled } from "../lib/sound";
 
@@ -40,8 +39,6 @@ const sliderTopEl = $<HTMLSpanElement>("slider-top");
 const whereListEl = $<HTMLUListElement>("where-list");
 const whereNoteEl = $<HTMLParagraphElement>("where-note");
 const whereModeNoteEl = $<HTMLParagraphElement>("where-mode-note");
-const switchEl = $<HTMLButtonElement>("ppp-switch");
-const basisLabEl = $<HTMLElement>("basis-lab");
 const soundEl = $<HTMLButtonElement>("sound");
 
 // ── sound toggle (casino ratchet during the ride) ───────────────────────────
@@ -61,13 +58,12 @@ let last: RevealData | null = null;
 let curAmount = 0; // the income currently displayed (entered or explored)
 
 // ── persisted preferences ────────────────────────────────────────────────────
-const LS = { country: "ir.country", period: "ir.period", mode: "ir.mode" };
+const LS = { country: "ir.country", period: "ir.period" };
 const lsGet = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } };
-let mode: Mode = lsGet(LS.mode) === "ppp" ? "ppp" : "nominal"; // exchange rate is the default
 
-/** The basis actually used — falls back to PPP where a country has no FX rate. */
-const effMode = (): Mode => (mode === "nominal" && current?.fx ? "nominal" : "ppp");
+// market exchange rates everywhere — your income converted to US$ as-is.
+const effMode = (): Mode => "nominal";
 
 // ── country loading + locale detection ──────────────────────────────────────
 async function loadCountry(iso: string): Promise<CountryData | null> {
@@ -85,7 +81,6 @@ function applyCountry(c: CountryData) {
   current = c;
   curEl.textContent = currencySymbol(c.currency);
   periodEl.value = c.period;
-  paintMode();
 }
 
 function detectIso(): string {
@@ -112,36 +107,6 @@ countryEl.addEventListener("change", () => {
 periodEl.addEventListener("change", () => lsSet(LS.period, periodEl.value));
 
 // ── basis toggle (market exchange rate ⇄ purchasing power) ───────────────────
-function paintMode() {
-  const can = !!(current && nominalAvailable(current)); // can the exchange-rate basis be used?
-  const on = effMode() === "ppp";
-  switchEl.setAttribute("aria-checked", String(on));
-  basisLabEl.textContent = on ? "PPP" : "market";
-  switchEl.classList.toggle("text-accent", on); // active basis is accented
-  // No FX rate → PPP is the only basis: lock the toggle rather than mislead.
-  switchEl.disabled = !can;
-  switchEl.classList.toggle("opacity-40", !can);
-  switchEl.classList.toggle("cursor-not-allowed", !can);
-  switchEl.title = can
-    ? "tap to flip between market rates and local prices (PPP)"
-    : "only PPP here. no exchange-rate data for this country.";
-}
-
-switchEl.addEventListener("click", () => {
-  if (switchEl.disabled) return;
-  ensureAudio();
-  tick(0.3, effMode() === "ppp" ? 700 : 1180); // soft click, pitch by new state
-  mode = effMode() === "ppp" ? "nominal" : "ppp";
-  lsSet(LS.mode, mode);
-  paintMode();
-  if (curAmount > 0) refresh(curAmount);
-});
-
-const MODE_NOTE: Record<Mode, string> = {
-  nominal: "at market exchange rates. your salary converted as-is, no local-price adjustment.",
-  ppp: "adjusted for local prices (PPP). what your income would actually buy over there.",
-};
-
 // ── perspectives + where-you'd-be-rich ──────────────────────────────────────
 function renderPerspectives(lines: string[]) {
   perspEl.textContent = lines[0] ?? "";
@@ -156,7 +121,7 @@ function renderPerspectives(lines: string[]) {
 
 function renderWhere(amount: number) {
   if (!current) return;
-  const { rows, top1Count } = whereYoudRank(current, amount, effMode());
+  const { rows, top1Count, total } = whereYoudRank(current, amount, effMode());
   whereListEl.replaceChildren(
     ...rows.map((r) => {
       const li = document.createElement("li");
@@ -170,15 +135,8 @@ function renderWhere(amount: number) {
       return li;
     }),
   );
-  whereModeNoteEl.textContent = MODE_NOTE[effMode()];
-  whereNoteEl.textContent = `youre top 1% in ${top1Count} of 171 countries.`;
-}
-
-function renderBuying(r: RevealData) {
-  const bp = buyingPowerLine(r, effMode());
-  const el = $<HTMLElement>("buying");
-  el.textContent = bp ?? "";
-  el.hidden = bp === null;
+  whereModeNoteEl.textContent = "at market exchange rates. your income converted to US$ as-is.";
+  whereNoteEl.textContent = `youre top 1% in ${top1Count} of ${total} countries.`;
 }
 
 // ── ASCENT: the elevator with no top floor ───────────────────────────────────
@@ -211,18 +169,17 @@ function scrubTick(daily: number) {
   tick(0.2, freq);
 }
 
-const cdfFor = (): [number, number][] => (effMode() === "ppp" ? W.cdf : W.cdfNom) as [number, number][];
+const cdfFor = (): [number, number][] => W.cdfNom as [number, number][];
 const fmtPeople = (n: number) => Math.round(Math.max(0, n)).toLocaleString("en-US");
 const topAt = (income: number) => (1 - fracBelow(cdfFor(), income)) * 100;
 const fmtMult = (m: number) =>
   m >= 1e6 ? `${(m / 1e6).toFixed(m >= 1e7 ? 0 : 1)}M×` : m >= 1000 ? `${Math.round(m / 1000)}k×` : m >= 10 ? `${Math.round(m)}×` : `${m.toFixed(1)}×`;
 
-/** The user's income as daily value in the CURRENT basis (PPP or market-FX). */
+/** The user's income as market-FX US$ per day. */
 function dailyOf(amount: number): number {
   if (!current) return 0;
   const annual = current.period === "monthly" ? amount * 12 : amount;
-  if (effMode() === "ppp") return annual / 365 / current.ppp2021;
-  return current.fx ? annual / 365 / current.fx : annual / 365 / current.ppp2021;
+  return annual / 365 / (current.fx ?? current.ppp2021);
 }
 
 /** (Re)build the shaft SVG. YOU + odometer live in the fixed car overlay (HTML). */
@@ -294,15 +251,16 @@ function staggerLines() {
   reveal.classList.add("show");
 }
 
-// ── explore slider (what-if your income) ─────────────────────────────────────
-const D_MIN = 0.7, D_MAX = 6000;
+// ── explore slider (what-if your income) — all in market-FX US$/day ───────────
+const D_MIN = 0.3, D_MAX = 8000;
 const sliderToDaily = (v: number) => D_MIN * Math.pow(D_MAX / D_MIN, v / 1000);
 const dailyToSlider = (d: number) =>
   Math.max(0, Math.min(1000, Math.round((1000 * Math.log(d / D_MIN)) / Math.log(D_MAX / D_MIN))));
 
 function sliderIncome(v: number): number {
   if (!current) return 0;
-  const annual = sliderToDaily(v) * 365 * current.ppp2021;
+  // invert dailyOf: slider position → market-FX daily → local-currency income
+  const annual = sliderToDaily(v) * 365 * (current.fx ?? current.ppp2021);
   return current.period === "monthly" ? annual / 12 : annual;
 }
 
@@ -338,11 +296,10 @@ function refresh(amount: number) {
   last = computeReveal(W, current, amount, effMode());
   renderPerspectives(buildPerspectives(W, current, amount, last, effMode()));
   renderWhere(amount);
-  renderBuying(last);
   const d = dailyOf(amount);
-  renderTower(d); // basis may have changed → rebuild the shaft
+  renderTower(d);
   setCam(d); setOdo(d); setHeadline(d);
-  sliderEl.value = String(dailyToSlider(toDailyIntl(amount, current.period, current.ppp2021)));
+  sliderEl.value = String(dailyToSlider(d));
   sliderTopEl.textContent = `global top ${formatTopPercent(last.globalTop)}`;
   sliderAmtEl.textContent = `${formatCurrency(amount, current.currency)}/${current.period === "monthly" ? "mo" : "yr"}`;
 }
@@ -479,7 +436,7 @@ function finishReveal() {
   showGapText();
   continueUpEl.classList.remove("hidden");
   exploreEl.classList.remove("hidden");
-  sliderEl.value = String(dailyToSlider(toDailyIntl(curAmount, current!.period, current!.ppp2021)));
+  sliderEl.value = String(dailyToSlider(dailyOf(curAmount)));
   sliderTopEl.textContent = `global top ${formatTopPercent(last!.globalTop)}`;
   sliderAmtEl.textContent = `${formatCurrency(curAmount, current!.currency)}/${current!.period === "monthly" ? "mo" : "yr"}`;
   staggerLines();
@@ -520,7 +477,6 @@ function showReveal(r: RevealData, amount: number) {
   rideId++; // cancel anything in flight
   renderPerspectives(buildPerspectives(W, current!, amount, r, effMode()));
   renderWhere(amount);
-  renderBuying(r);
 
   // guess phase: a static shaft framed across the human range; drag to place
   ascentEl.classList.add("guessing");
@@ -720,7 +676,6 @@ $("share-copy").addEventListener("click", async () => {
 });
 
 // ── init: restore saved country + period, else detect ───────────────────────
-paintMode();
 (async () => {
   const saved = lsGet(LS.country);
   const startIso = saved && countryEl.querySelector(`option[value="${saved}"]`) ? saved : detectIso();

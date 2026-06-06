@@ -67,6 +67,7 @@ export function nominalAvailable(country: CountryData): boolean {
 export function whereYoudRank(country: CountryData, amount: number, mode: WhereMode): {
   rows: WhereRow[];
   top1Count: number;
+  total: number;
 } {
   const dailyPpp = toDailyIntl(amount, country.period, country.ppp2021);
   const userPl = country.priceLevel ?? (country.fx ? country.ppp2021 / country.fx : null);
@@ -88,6 +89,7 @@ export function whereYoudRank(country: CountryData, amount: number, mode: WhereM
   // show the whole curated atlas + home, where-you're-richest (lowest top %) first
   const rows = all.sort((a, b) => a.top - b.top);
 
-  const top1Count = W.reduce((n, e) => n + (!(nominal && e.pl == null) && rank(e) <= 1 ? 1 : 0), 0);
-  return { rows, top1Count };
+  const rankable = W.filter((e) => !(nominal && e.pl == null));
+  const top1Count = rankable.reduce((n, e) => n + (rank(e) <= 1 ? 1 : 0), 0);
+  return { rows, top1Count, total: rankable.length };
 }

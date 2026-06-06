@@ -280,7 +280,8 @@ async function main() {
         dist: distOut, tail: { fromF: TAIL_START, xmin: round(dist.xmin, 4), alpha: round(dist.alpha, 4) },
       }));
       nFiles++;
-      index.push({ iso: cc, iso2: meta.iso2, name: meta.name, currency: cur, period: CORE5[cc]?.period ?? "annual", core5: !!CORE5[cc] });
+      // market-FX is the only basis, so a country is only selectable if it has an FX rate
+      if (fx.get(cc)) index.push({ iso: cc, iso2: meta.iso2, name: meta.name, currency: cur, period: CORE5[cc]?.period ?? "annual", core5: !!CORE5[cc] });
     }
   }
 

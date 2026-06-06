@@ -7,7 +7,7 @@ Your income never leaves your browser — all ranking runs client-side against p
 ## How it works
 
 1. You enter a gross income in your local currency + period.
-2. It's converted to 2021 international dollars (`income / 365 / PPP`).
+2. It's converted to US dollars at market exchange rates (`income / 365 / FX`).
 3. That value is looked up in a population-weighted **world** income distribution (global rank) and your **country's** distribution (local rank).
 4. A staged reveal animates the result; a privacy-safe card/link lets you share it.
 

@@ -11,11 +11,15 @@ Last verified: **2026-06-05** (against the live World Bank / OWID data).
 
 ## How a rank is produced (one paragraph)
 
-Your gross income is converted to **2021 PPP international dollars per day**
-(`income ÷ 365 ÷ PPP-factor`), then looked up in a **population-weighted mixture of
-171 country income distributions** built from the World Bank's Poverty & Inequality
-Platform (PIP). Your **global rank** is your position in that world distribution; your
-**local rank** is your position within your own country's distribution. Each country's
+Your gross income is converted to **US dollars at market exchange rates**
+(`income ÷ 365 ÷ FX-rate`), then looked up in a **population-weighted mixture of
+country income distributions** built from the World Bank's Poverty & Inequality
+Platform (PIP) and re-expressed at those same market rates. (PIP publishes in 2021 PPP
+international dollars; we divide each country's curve by its price level to put the
+whole world on a market-FX basis — the simpler "your salary in dollars vs everyone
+else's" comparison, with no cost-of-living adjustment.) Your **global rank** is your
+position in that world distribution; your **local rank** is your position within your own
+country's distribution (price-level-invariant, so it's the same either way). Each country's
 curve is built from its PIP percentile thresholds, with a **Pareto tail (α ≈ 2)** fitted
 to its well-measured upper-middle band — because household surveys top-code the rich, the
 extreme top must be *extrapolated*, not read off. This is the standard technique
@@ -118,7 +122,7 @@ people and stops at the ceiling, **Elon Musk**. These are a deliberately rough y
 |---|---|---|
 | MrBeast | $233K | annual **earnings** ÷ 365 (Forbes Top Creators) |
 | Cristiano Ronaldo | $750K | annual **earnings** ÷ 365 (Forbes Highest-Paid Athletes 2025) |
-| Taylor Swift | $1.1M | annual **earnings** ÷ 365 (Forbes celebrity estimate) |
+| Taylor Swift | $1.1M | annual **earnings** ÷ 365 (Forbes: ~$400M pretax, 2024 Eras Tour year) |
 | Larry Ellison | $16M | year-over-year **wealth growth** ÷ 365 (Forbes Billionaires 2026) |
 | Jeff Bezos | $120M | **wealth growth** ÷ 365 (Forbes Billionaires 2026) |
 | **Elon Musk** | **$1.4B** | **wealth growth** ÷ 365 (Forbes Billionaires 2026: ~$839B, up ~$500B YoY) |
