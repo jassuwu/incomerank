@@ -1,0 +1,26 @@
+{
+  "name": "incomerank-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remotion demo for the Income Rank README header + social cards",
+  "scripts": {
+    "audio": "bun scripts/gen-soundtrack.ts",
+    "studio": "remotion studio",
+    "render:hero": "remotion render src/index.ts hero out/incomerank-hero.mp4 --codec=h264",
+    "render:social": "remotion render src/index.ts hero-cta out/incomerank-social.mp4 --codec=h264",
+    "gif": "ffmpeg -y -v error -i out/incomerank-hero.mp4 -vf \"fps=16,scale=900:-1:flags=lanczos,palettegen=max_colors=144:stats_mode=diff\" out/.palette.png && ffmpeg -y -v error -i out/incomerank-hero.mp4 -i out/.palette.png -lavfi \"fps=16,scale=900:-1:flags=lanczos,paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle\" out/incomerank-hero.gif",
+    "render": "bun run audio && npm run render:hero && npm run render:social && npm run gif",
+    "still": "remotion still src/index.ts hero-cta out/still.png"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.290",
+    "@remotion/google-fonts": "4.0.290",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.290"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "typescript": "5.6.3"
+  }
+}
