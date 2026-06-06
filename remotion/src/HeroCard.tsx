@@ -70,7 +70,7 @@ function readoutAt(frame: number): Readout {
       };
     case "ascent":
       return {
-        eyebrow: "ascending the shaft of humanity…",
+        eyebrow: "counting everyone below you…",
         pre: "top ",
         big: fmtTop((1 - frac) * 100),
         unit: "%",

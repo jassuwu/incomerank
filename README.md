@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  Enter what you make and ride the elevator with no top floor up the shaft of
-  humanity — see exactly where your income lands against everyone on Earth.
+  Enter what you make, ride the elevator with no top floor, and see exactly where
+  your income lands against everyone on Earth.
 </p>
 
 <p align="center">
@@ -19,7 +19,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="docs/assets/readme/incomerank-header-poster.png">
-    <img alt="Income Rank rides your income up a log-scale shaft of all humanity, lands on your global percentile, then keeps climbing past MrBeast, Ronaldo and Swift all the way to Elon Musk." src="docs/assets/readme/incomerank-header.gif" width="900">
+    <img alt="Income Rank rides your income up a log-scale column of everyone on Earth, lands on your global percentile, then keeps climbing past MrBeast, Ronaldo and Swift all the way to Elon Musk." src="docs/assets/readme/incomerank-header.gif" width="900">
   </picture>
 </p>
 
@@ -47,7 +47,7 @@ full in [`SOURCES.md`](./SOURCES.md), [`CONTEXT.md`](./CONTEXT.md) and
 
 ## The Reveal
 
-The hero is **ASCENT** — income as altitude on a log axis. All of humanity is a
+The hero is **ASCENT** — income as altitude on a log axis. Everyone on Earth is a
 column of dots, densest at the bottom (billions on a few dollars a day) thinning to
 a lonely thread in the rich tail. You ride a glass car *up* the shaft; the world
 scrolls past; floors are income landmarks (the poverty line, the median person, the

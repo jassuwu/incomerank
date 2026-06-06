@@ -30,7 +30,7 @@ const TOWER_C: TowerColors = {
 
 const CAR_FRAC = 0.54;
 
-/** The glass car climbing the shaft of humanity — same geometry as the live site. */
+/** The glass car climbing the shaft — same geometry as the live site. */
 export const Shaft: React.FC = () => {
   const frame = useCurrentFrame();
 
