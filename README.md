@@ -106,15 +106,6 @@ validated against published global anchors for the body (Giving What We Can / Ou
 World in Data, same PIP base) and against WID for the tail shape — see `verify()`.
 Generated data (`src/data/`, `public/data/`) is committed so the site builds offline.
 
-## Deploy (Cloudflare)
-
-`jass.gg` must be an active zone on the Cloudflare account.
-
-```bash
-bun run build
-bunx wrangler deploy   # uploads ./dist, binds incomerank.jass.gg (wrangler.jsonc)
-```
-
 ## The Demo
 
 The header GIF and the social MP4 are rendered with **Remotion** in
