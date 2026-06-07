@@ -282,7 +282,7 @@ function refresh(amount: number) {
   const d = dailyOf(amount);
   renderTower(d, undefined, phase === "done"); // keep the landed styling when switching country
   setCam(d); setOdo(d); setHeadline(d);
-  if (phase === "done") setHeroSub();
+  if (phase === "done") { setHeroSub(); buildShareEager(); } // country switch → rebuild the card
 }
 
 // ── the guess (the bet): drag yourself up the tower ──────────────────────────
@@ -425,6 +425,7 @@ function finishReveal() {
   staggerLines();
   // the "keep going" lure arrives a beat after the gap so it doesn't crowd the payoff.
   setTimeout(() => continueUpEl.classList.remove("hidden"), reduceMotion ? 0 : 550);
+  buildShareEager(); // render the share card now so the share tap is instant
 }
 
 /** Set (or hide) the home-country rank line under the hero. */
@@ -482,6 +483,8 @@ function showReveal(r: RevealData, amount: number) {
   gapEl.classList.add("hidden");
   continueUpEl.classList.add("hidden");
   heroSubEl.classList.remove("show");
+  sharePanelEl.classList.add("hidden");
+  shareReady = false;
   revealEyebrowEl.textContent = "Before the doors open…";
   heroLineEl.textContent = "where do you rank?";
 
@@ -549,6 +552,7 @@ const shareImgEl = $<HTMLImageElement>("share-img");
 let shareBlob: Blob | null = null;
 let shareUrl = "";
 let shareText = "";
+let shareReady = false; // the card is built eagerly during the ride → instant share tap
 
 interface ShareData { guessLabel: string; rankLabel: string; diff: string; nailed: boolean; elon: string }
 
@@ -639,9 +643,11 @@ function buildShareCanvas(d: ShareData): HTMLCanvasElement {
 
 const flash = (btn: HTMLElement, msg: string) => { const old = btn.textContent; btn.textContent = msg; setTimeout(() => (btn.textContent = old), 1600); };
 
-$("share").addEventListener("click", async () => {
+/** Render the share card + link/text once, ahead of time, so the share tap is
+ *  instant. Called during the post-landing beat (and re-run if the data changes). */
+async function buildShareEager() {
   if (!last || !current) return;
-  ensureAudio(); tick(0.3, 980);
+  shareReady = false;
   try { await (document as Document & { fonts?: FontFaceSet }).fonts?.ready; } catch { /* no FontFaceSet */ }
   const d = shareData();
   shareUrl = `${location.origin}/r/${last.globalBucket}?c=${current.iso}&l=${last.localPercentile}&g=${Math.round(guessTop)}`;
@@ -651,6 +657,13 @@ $("share").addEventListener("click", async () => {
   const canvas = buildShareCanvas(d);
   shareImgEl.src = canvas.toDataURL("image/png");
   await new Promise<void>((res) => canvas.toBlob((blob) => { shareBlob = blob; res(); }, "image/png"));
+  shareReady = true;
+}
+
+$("share").addEventListener("click", async () => {
+  if (!last || !current) return;
+  ensureAudio(); tick(0.3, 980);
+  if (!shareReady) await buildShareEager(); // fallback if the eager build hasn't finished
   sharePanelEl.classList.remove("hidden");
   sharePanelEl.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "nearest" });
 });
