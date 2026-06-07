@@ -19,7 +19,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="docs/assets/readme/incomerank-header-poster.png">
-    <img alt="Income Rank rides your income up a log-scale column of everyone on Earth, lands on your global percentile, then keeps climbing past creators, athletes and billionaires from around the world all the way to Elon Musk." src="docs/assets/readme/incomerank-header.gif?v=3" width="900">
+    <img alt="Income Rank rides your income up a log-scale column of everyone on Earth, lands on your global percentile, then keeps climbing past creators, athletes and billionaires from around the world all the way to Elon Musk." src="docs/assets/readme/incomerank-header.gif?v=6" width="900">
   </picture>
 </p>
 
@@ -36,8 +36,9 @@ browser against a static, pre-baked World Bank distribution.
 2. It's converted to US dollars at market exchange rates (`income ÷ 365 ÷ FX`).
 3. That value is looked up in a population-weighted **world** income distribution
    (your global rank) and in your **country's** distribution (your local rank).
-4. A staged reveal animates the climb, then a privacy-safe card/link lets you share
-   the result — your rank, never your income.
+4. You **bet** where you think you land, then a staged reveal climbs to the truth —
+   the **gap** between your guess and reality ("off by a billion people") is the
+   hook — and a privacy-safe card/link lets you share it (your rank, never your income).
 
 Every result is a deliberately-labelled **estimate**, and every known bias points
 upward (individual-vs-household, gross-vs-net, whole-population denominator). The
@@ -49,10 +50,13 @@ full in [`SOURCES.md`](./SOURCES.md), [`CONTEXT.md`](./CONTEXT.md) and
 
 The hero is **ASCENT** — income as altitude on a log axis. Everyone on Earth is a
 column of dots, densest at the bottom (billions on a few dollars a day) thinning to
-a lonely thread in the rich tail. You ride a glass car *up* the shaft; the world
-scrolls past; floors are income landmarks (the poverty line, the median person, the
-global top 1%). Past your own floor you can keep climbing — flying past Shah Rukh
-Khan, BTS, Ronaldo and Mukesh Ambani, all the way to the ceiling, Elon Musk. A procedural Web-Audio
+a lonely thread in the rich tail. First you **bet** your own rank by dragging a puck
+up the shaft and letting go; then you ride a glass car *up* the shaft to where you
+actually land — your guess left behind as a marker, the distance to it the whole
+point. The world scrolls past; floors are income landmarks (the poverty line, the
+median person, the global top 1%). Past your own floor you can keep climbing —
+flying past Shah Rukh Khan, BTS, Ronaldo and Mukesh Ambani, all the way to the
+ceiling, Elon Musk. A procedural Web-Audio
 ratchet ticks per notch of travel and machine-guns with speed; a thunk + chime
 marks each landing. One pure geometry (`src/lib/tower.ts`) drives the live reveal,
 the static `/r/N` share pages, the OG cards and this README's header alike.

@@ -10,6 +10,8 @@ import { Resvg } from "@resvg/resvg-js";
 import { writeFile, mkdir } from "node:fs/promises";
 import world from "../src/data/world.json";
 import { formatPeople } from "../src/lib/rank-copy";
+import { globalPerspectives } from "../src/lib/perspectives";
+import type { WorldData } from "../src/lib/types";
 import { towerFrame, incomeAtF, type TowerColors } from "../src/lib/tower";
 
 const ROOT = new URL("..", import.meta.url).pathname;
@@ -40,14 +42,38 @@ function shell(inner: string): string {
   </svg>`;
 }
 
+const escapeXml = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** Wrap a line to `maxChars` per line and emit stacked <text> elements. */
+function wrapText(text: string, x: number, y: number, size: number, fill: string, weight: number, maxChars: number): string {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    if (cur && (cur + " " + w).length > maxChars) { lines.push(cur); cur = w; }
+    else cur = cur ? `${cur} ${w}` : w;
+  }
+  if (cur) lines.push(cur);
+  return lines
+    .map((ln, i) => `<text x="${x}" y="${y + i * Math.round(size * 1.22)}" font-family="Inter" font-weight="${weight}" font-size="${size}" fill="${fill}">${escapeXml(ln)}</text>`)
+    .join("");
+}
+
 function rankCard(b: number): string {
+  const persp = globalPerspectives(world as unknown as WorldData, b);
   const people = formatPeople((world as any).worldPopulation * (1 - b / 100));
   const ofHundred = Math.max(1, 100 - b);
+  // lead with the most visceral line this bucket has (the countries-combined
+  // gut-punch when it exists, else the world-of-100 line) — ADR-0004's "punchier
+  // static copy" win, no per-guess personalization.
+  const combined = persp.find((p) => p.startsWith("thats more people than live in"));
+  const punch = combined ?? `if the world was 100 people, ${ofHundred} would have less.`;
   return shell(`
-    <text x="84" y="232" font-family="Inter" font-weight="600" font-size="40" fill="${C.inkSoft}">you're in the global</text>
-    <text x="80" y="392" font-family="Inter" font-weight="800" font-size="156" fill="${C.accent}">top ${b}%</text>
-    <text x="84" y="470" font-family="Inter" font-weight="600" font-size="32" fill="${C.ink}">if the world was 100, ${ofHundred} have less.</text>
-    <text x="84" y="514" font-family="Inter" font-weight="400" font-size="28" fill="${C.muted}">~${people} of them live on less than you.</text>
+    <text x="84" y="214" font-family="Inter" font-weight="600" font-size="40" fill="${C.inkSoft}">you're in the global</text>
+    <text x="80" y="374" font-family="Inter" font-weight="800" font-size="156" fill="${C.accent}">top ${b}%</text>
+    ${wrapText(punch, 84, 452, 33, C.ink, 700, 40)}
+    <text x="84" y="548" font-family="Inter" font-weight="400" font-size="27" fill="${C.muted}">~${people} people live on less than you.</text>
     ${towerBox(b, 800, 40, 340, 540)}
   `);
 }
