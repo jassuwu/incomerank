@@ -43,7 +43,7 @@ export const Shaft: React.FC = () => {
   // camera visibly PASSES the bet on the climb (same as the live reveal). The car
   // overlay still marks YOU, so no youLabel here.
   const bodyBase = useMemo(() => {
-    const t = buildTower(cdf, YOU_DAILY, WORLD_POP, 3000);
+    const t = buildTower(cdf, YOU_DAILY, WORLD_POP, 4200);
     return towerBody(t, TOWER_C, {
       live: true,
       hideYou: true,
