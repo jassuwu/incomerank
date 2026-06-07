@@ -30,6 +30,7 @@ const odoLabEl = $<HTMLElement>("odo-lab");
 const guessUiEl = $<HTMLElement>("guess-ui");
 const guessPuckEl = $<HTMLElement>("guess-puck");
 const guessLabEl = $<HTMLElement>("guess-lab");
+const guessInstrEl = $<HTMLElement>("guess-instr");
 const guessGoEl = $<HTMLButtonElement>("guess-go");
 const gapEl = $<HTMLElement>("gap");
 const exploreEl = $<HTMLElement>("explore");
@@ -349,10 +350,25 @@ function setGuess(daily: number) {
   scrubTick(daily);
 }
 
+// the bet is one decisive gesture (a slingshot): drag or tap to place, LET GO to
+// lock. A short grace after release guards a stray tap — grab again to adjust.
+const GUESS_INSTR = `drag to where you think you rank — <strong class="text-ink">let go to lock</strong>.`;
 let dragging = false;
+let armTimer = 0;
+function cancelArm() {
+  if (armTimer) { clearTimeout(armTimer); armTimer = 0; }
+  ascentEl.classList.remove("arming");
+  guessInstrEl.innerHTML = GUESS_INSTR;
+}
+function armLock() {
+  ascentEl.classList.add("arming");
+  guessInstrEl.innerHTML = `locking in <strong class="text-ink">top ${formatTopPercent(topAt(guessDaily))}</strong>… <span class="text-faint">grab to adjust</span>`;
+  armTimer = window.setTimeout(() => { armTimer = 0; if (phase === "guess") startAscent(); }, 600);
+}
 function onPointerDown(e: PointerEvent) {
   if (phase === "ride") { skipToYou(); return; } // tap skips the cinematic
   if (phase !== "guess") return;
+  cancelArm(); // re-grab during the grace → keep adjusting
   ensureAudio(); // pointerdown is a gesture → the drag can tick
   dragging = true;
   lastTickY = NaN; // first move ticks immediately
@@ -364,7 +380,11 @@ function onPointerDown(e: PointerEvent) {
 function onPointerMove(e: PointerEvent) {
   if (dragging && phase === "guess") { setGuess(pointerToDaily(e.clientY)); e.preventDefault(); }
 }
-function onPointerUp() { dragging = false; }
+function onPointerUp() {
+  if (!dragging || phase !== "guess") { dragging = false; return; }
+  dragging = false;
+  armLock(); // release locks the bet (after the grace)
+}
 ascentEl.addEventListener("pointerdown", onPointerDown);
 ascentEl.addEventListener("pointermove", onPointerMove);
 ascentEl.addEventListener("pointerup", onPointerUp);
@@ -394,6 +414,7 @@ guessGoEl.addEventListener("click", () => { ensureAudio(); startAscent(); }); //
 // + the gap sentence — no confusing away-and-back trip.
 function startAscent() {
   if (!current || phase !== "guess") return;
+  cancelArm();
   phase = "ride";
   guessTop = topAt(guessDaily);
   ascentEl.classList.remove("guessing");
@@ -503,6 +524,7 @@ function showReveal(r: RevealData, amount: number) {
   ascentEl.classList.add("guessing");
   reveal.classList.add("guessing");
   ascentEl.classList.remove("riding", "arrived", "landed");
+  cancelArm();
   guessPuckEl.classList.remove("touched");
   guessUiEl.classList.remove("hidden");
   exploreEl.classList.add("hidden");
@@ -516,7 +538,9 @@ function showReveal(r: RevealData, amount: number) {
   guessVy = worldY(GUESS_HI); // frame the guess window: $900/day (top ~0.1%) at the top…
   guessLo = Math.pow(10, -(guessVy + GUESS_VIEW_H) / DECADE); // …down to ~$0.5/day (top ~97%)
   camSvg?.setAttribute("viewBox", `${-VIEW_W / 2} ${guessVy} ${VIEW_W} ${GUESS_VIEW_H}`);
-  setGuess(Math.pow(10, -(guessVy + GUESS_VIEW_H * 0.5) / DECADE)); // start the puck mid-shaft
+  // start the puck at the global median (top 50%) — an honest neutral anchor; most
+  // people with a phone are well above it, so the reveal surprises upward on its own.
+  setGuess(Math.max(guessLo, Math.min(GUESS_HI, incomeAtF(cdfFor(), 0.5))));
 
   form.classList.add("opacity-0");
   const swap = () => {
@@ -530,6 +554,7 @@ function resetToForm() {
   reveal.classList.add("hidden");
   reveal.classList.remove("show", "guessing");
   ascentEl.classList.remove("riding", "arrived", "guessing", "landed");
+  cancelArm();
   heroSubEl.classList.remove("show");
   sharePanelEl.classList.add("hidden");
   rideId++;

@@ -78,6 +78,12 @@ const list = countries as CountryIndexEntry[];
         <div id="ascent" class="ascent relative mx-auto mt-6 select-none">
           <div id="field" class="shaft"></div>
 
+          <!-- which way is which — faint, guess phase only -->
+          <div class="guess-legend" aria-hidden="true">
+            <span class="gl-top">↑ richer</span>
+            <span class="gl-bot">poorer ↓</span>
+          </div>
+
           <!-- the car: your eye-line, fixed over the shaft (ride + explore) -->
           <div id="car" class="car">
             <span class="car-dot"></span>
@@ -116,13 +122,13 @@ const list = countries as CountryIndexEntry[];
           </div>
         </div>
 
-        <!-- guess prompt -->
+        <!-- guess prompt: drag/tap to place, let go to lock (the button is a small fallback) -->
         <div id="guess-ui" class="mt-4 max-w-sm mx-auto text-center">
           <p id="guess-instr" class="text-sm leading-snug text-muted">
-            drag yourself <strong class="text-ink">up the tower</strong>. how high do you reckon you land?
+            drag to where you think you rank — <strong class="text-ink">let go to lock</strong>.
           </p>
-          <button id="guess-go" class="mt-3 inline-flex rounded-full bg-ink px-6 py-2.5 font-medium text-paper transition hover:bg-accent active:scale-[0.99]" type="button">
-            lock it in →
+          <button id="guess-go" class="mt-2.5 inline-flex rounded-full border border-line px-5 py-1.5 text-sm font-medium text-muted transition hover:border-ink hover:text-ink active:scale-[0.99]" type="button">
+            or tap to lock it in →
           </button>
         </div>
 
@@ -548,6 +554,29 @@ const list = countries as CountryIndexEntry[];
   .guess-puck { display: none; }
   .ascent.guessing .guess-puck { display: block; }
   .ascent.guessing .car { display: none; }
+  /* release-to-lock: a stronger pulse during the ~600ms "locking…" grace */
+  .ascent.arming .guess-puck .puck-dot { animation: pucklock 0.6s ease-out forwards; }
+  @keyframes pucklock {
+    0% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 26%, transparent); }
+    100% { box-shadow: 0 0 0 16px color-mix(in srgb, var(--color-accent) 0%, transparent); }
+  }
+  .ascent.arming .puck-line { opacity: 0.95; }
+
+  /* faint up/down legend during the guess */
+  .guess-legend { display: none; }
+  .ascent.guessing .guess-legend { display: block; }
+  .gl-top, .gl-bot {
+    position: absolute;
+    right: 6px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--color-faint);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .gl-top { top: 8px; }
+  .gl-bot { bottom: 8px; }
 
   /* collapsible Sources & method */
   .method-summary::-webkit-details-marker { display: none; }
