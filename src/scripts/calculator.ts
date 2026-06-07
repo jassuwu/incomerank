@@ -1,6 +1,6 @@
 import world from "../data/world.json";
 import type { CountryData, Mode, WorldData } from "../lib/types";
-import { parseAmount, currencySymbol, formatCurrency } from "../lib/format";
+import { parseAmount, currencySymbol } from "../lib/format";
 import { computeReveal, formatTopPercent, formatPeople, type RevealData } from "../lib/rank-copy";
 import { buildPerspectives } from "../lib/perspectives";
 import { whereYoudRank } from "../lib/where";
