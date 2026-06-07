@@ -102,34 +102,56 @@ The core loop *see → try → share* must never be gated by exploration UI.
   better-structured than the cold homepage.
 - **Change:** punchier first-viewport hook; make the CTA a high-contrast primary
   **button** at first paint; pre-fill the visitor's detected country.
-- **Add (the single biggest virality fix):** personalize the **OG unfurl image**
-  to the guess gap. `/og/top-<b>.png` is static per bucket and the "off by N
-  people" dare exists only in client JS — so the in-feed thumbnail (the
-  most-viewed surface of all) shows the blandest non-personalized version. Land
-  receivers straight into **guess mode**, not the cold input form.
+- **Considered & deferred:** personalizing the **OG unfurl image** to the Gap
+  (`/og/top-<b>.png` is static per bucket; the "off by N people" dare lives only
+  in client JS, so the unfurl shows the blandest version). The fix is real but
+  was rejected for now — see the decision below and
+  [ADR-0004](./adr/0004-static-og-no-guess-personalization.md). The kept move is
+  punchier *static* copy. (Landing receivers straight into **guess mode** remains
+  an open option, not yet decided.)
 
-## Decisions for you (the genuine forks)
+## Decisions (locked 2026-06-07)
 
-1. **The guess: mandatory / skippable / removed?**
-   → *Recommendation:* keep it as the **default first beat but add a visible
-   "just show me →" skip.* It's the soul of the app — it manufactures the
-   surprise the reveal trades on and is the entire basis of the share card's
-   dare — so removing it guts virality; but mandatory taxes the biggest dopamine
-   delay. Skippable keeps the moat *and* protects time-to-payoff.
+North star is **Pull** — desire-to-try on sight, not an engineered share funnel
+(see `CONTEXT.md`). Every call below was judged by it.
 
-2. **The explore what-if slider: cut / demote / keep?**
-   → *Recommendation:* **demote, leaning cut.** It's explicitly off-mission, the
-   weakest passenger, and almost nobody shares a what-if. Cutting it also removes
-   real state churn (`sliderToDaily`/`dailyToSlider`/`rafPending`).
+**Guess — kept, mandatory and frictionless.**
+- Bet by drag-or-tap with **release-to-lock** (a slingshot); the rising-pitch
+  scrub is preserved on drag; the separate "lock it in" button is dropped as a
+  *required* step (kept small as a hint + keyboard Enter); a ~600ms
+  "locking… (grab to adjust)" grace guards stray taps; **no confirm tap.**
+- The puck **starts at the global median (top 50%)** — an honest neutral anchor.
+  Country-median anchoring was rejected as too manipulative for *this* product.
+- *Rejected:* a "just show me →" skip — we keep betting mandatory (so every
+  result carries a **Gap**) and remove the friction instead of offering an escape.
 
-3. **The "keep going to Elon" climb: auto-play / prominent lure / leave as-is?**
-   → *Recommendation:* keep it a lure but **fire it right after the gap line**,
-   before any dense content. Auto-playing adds ~8.5s of forced animation and
-   pushes share further away.
+**Reveal — split into Money shot + Go deeper** (both in `CONTEXT.md`).
+- **Money shot** (one screenshot-clean viewport): Global rank + Local rank +
+  the shaft with YOU/GUESS marks + the **Gap** line + the rotating pull-quote +
+  the keep-going lure + one simple save/share + a one-line **Estimate** disclaimer.
+- **Cut entirely:** the explore what-if slider (off-mission, never shared, heavy
+  state — `sliderToDaily`/`dailyToSlider`/`setExplore`/`rafPending`).
+- **Demote to Go deeper:** where-you'd-be-rich (keep its one-liner as the header),
+  the 5-bullet perspectives list, and the sources/method prose (trim to ~2
+  sentences; keep the table + source links).
+- **Keep in the Money shot:** the rotating pull-quote (the most Pull-magnetic text).
+- **Elon climb:** stays a prominent **lure**, fired right after the Gap —
+  *no auto-play, no spoiler*.
 
-4. **A pre-input curiosity hook (0th screen)?**
-   → *Recommendation:* **fold it into INPUT as one line of copy, don't add a
-   screen.** A dedicated hook frame adds a tap and opposes time-to-payoff.
+**Share machinery — simple, not a funnel.**
+- One affordance in the Money shot; build the Share card eagerly during the ride;
+  tap → preview the card + native share sheet (save-image / copy-link on desktop).
+- **Dropped from scope:** the 9:16 Stories card and the challenge-a-friend loop.
+- **OG unfurl:** stays static per-bucket, **not** personalized to the Gap —
+  see [ADR-0004](./adr/0004-static-og-no-guess-personalization.md). Cheap win:
+  punchier static per-bucket OG copy.
+
+**Input — keep it lean.**
+- **Add** one non-spoiler stakes + privacy line, e.g. *"find out where your income
+  really ranks among everyone alive — your number never leaves this device."*
+- **Do NOT demote the country/currency selector.** It is *currency*-load-bearing:
+  the user enters their **local** currency, and the app must never make them
+  hand-convert to USD. It stays prominent and easy.
 
 ## Virality priorities (ranked)
 
