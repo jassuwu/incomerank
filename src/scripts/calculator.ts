@@ -33,14 +33,10 @@ const guessLabEl = $<HTMLElement>("guess-lab");
 const guessInstrEl = $<HTMLElement>("guess-instr");
 const guessGoEl = $<HTMLButtonElement>("guess-go");
 const gapEl = $<HTMLElement>("gap");
-const exploreEl = $<HTMLElement>("explore");
 const continueUpEl = $<HTMLElement>("continue-up");
 const continueBtnEl = $<HTMLButtonElement>("continue-up-btn");
 const perspEl = $<HTMLElement>("persp");
 const perspListEl = $<HTMLUListElement>("persp-list");
-const sliderEl = $<HTMLInputElement>("slider");
-const sliderAmtEl = $<HTMLSpanElement>("slider-amt");
-const sliderTopEl = $<HTMLSpanElement>("slider-top");
 const whereListEl = $<HTMLUListElement>("where-list");
 const whereNoteEl = $<HTMLParagraphElement>("where-note");
 const whereModeNoteEl = $<HTMLParagraphElement>("where-mode-note");
@@ -275,44 +271,7 @@ function staggerLines() {
   reveal.classList.add("show");
 }
 
-// ── explore slider (what-if your income) — all in market-FX US$/day ───────────
-const D_MIN = 0.3, D_MAX = 8000;
-const sliderToDaily = (v: number) => D_MIN * Math.pow(D_MAX / D_MIN, v / 1000);
-const dailyToSlider = (d: number) =>
-  Math.max(0, Math.min(1000, Math.round((1000 * Math.log(d / D_MIN)) / Math.log(D_MAX / D_MIN))));
-
-function sliderIncome(v: number): number {
-  if (!current) return 0;
-  // invert dailyOf: slider position → market-FX daily → local-currency income
-  const annual = sliderToDaily(v) * 365 * (current.fx ?? current.ppp2021);
-  return current.period === "monthly" ? annual / 12 : annual;
-}
-
-/** Live what-if: pan the car to a new income, recompute headline + odometer. */
-function setExplore(income: number) {
-  if (!current) return;
-  tailMode = false;
-  setBlur(0);
-  const d = dailyOf(income);
-  setCam(d); setOdo(d); setHeadline(d); scrubTick(d);
-  revealEyebrowEl.textContent = "you'd be in the global";
-  sliderTopEl.textContent = `global top ${formatTopPercent(topAt(d))}`;
-  sliderAmtEl.textContent = `${formatCurrency(income, current.currency)}/${current.period === "monthly" ? "mo" : "yr"}`;
-}
-
-let rafPending = false;
-sliderEl.addEventListener("input", () => {
-  if (rafPending) return;
-  rafPending = true;
-  requestAnimationFrame(() => {
-    rafPending = false;
-    setExplore(sliderIncome(+sliderEl.value));
-  });
-});
-sliderEl.addEventListener("change", () => refresh(sliderIncome(+sliderEl.value)));
-sliderEl.addEventListener("pointerdown", () => { ensureAudio(); lastTickY = NaN; });
-
-// ── recompute everything (rebuild tower) — slider release, PPP/country toggles ─
+// ── recompute everything (rebuild tower) — country / period toggles ───────────
 function refresh(amount: number) {
   if (!current) return;
   curAmount = amount;
@@ -321,12 +280,9 @@ function refresh(amount: number) {
   renderPerspectives(buildPerspectives(W, current, amount, last, effMode()));
   renderWhere(amount);
   const d = dailyOf(amount);
-  renderTower(d, undefined, phase === "done"); // keep the landed styling when exploring / switching country
+  renderTower(d, undefined, phase === "done"); // keep the landed styling when switching country
   setCam(d); setOdo(d); setHeadline(d);
   if (phase === "done") setHeroSub();
-  sliderEl.value = String(dailyToSlider(d));
-  sliderTopEl.textContent = `global top ${formatTopPercent(last.globalTop)}`;
-  sliderAmtEl.textContent = `${formatCurrency(amount, current.currency)}/${current.period === "monthly" ? "mo" : "yr"}`;
 }
 
 // ── the guess (the bet): drag yourself up the tower ──────────────────────────
@@ -466,10 +422,6 @@ function finishReveal() {
   ascentEl.classList.add("landed"); // reveal the baked YOU pill
   setHeroSub(); //                     the home-country rank under the hero
   showGapText();
-  exploreEl.classList.remove("hidden");
-  sliderEl.value = String(dailyToSlider(dailyOf(curAmount)));
-  sliderTopEl.textContent = `global top ${formatTopPercent(last!.globalTop)}`;
-  sliderAmtEl.textContent = `${formatCurrency(curAmount, current!.currency)}/${current!.period === "monthly" ? "mo" : "yr"}`;
   staggerLines();
   // the "keep going" lure arrives a beat after the gap so it doesn't crowd the payoff.
   setTimeout(() => continueUpEl.classList.remove("hidden"), reduceMotion ? 0 : 550);
@@ -527,7 +479,6 @@ function showReveal(r: RevealData, amount: number) {
   cancelArm();
   guessPuckEl.classList.remove("touched");
   guessUiEl.classList.remove("hidden");
-  exploreEl.classList.add("hidden");
   gapEl.classList.add("hidden");
   continueUpEl.classList.add("hidden");
   heroSubEl.classList.remove("show");
