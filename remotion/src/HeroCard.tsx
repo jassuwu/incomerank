@@ -13,10 +13,11 @@ import {
   PEAK,
   famousPassed,
   CURRENCY,
-  AMOUNT_LABEL,
   COUNTRY,
   PERIOD,
   LOCAL_TOP_LABEL,
+  GUESS_TOP,
+  GAP_LABEL,
   INPUT_END,
   SUBMIT_FRAME,
   typedAmountAt,
@@ -33,8 +34,6 @@ import {
 const YOU_FRAC = fracBelow(cdf, YOU_DAILY);
 const YOU_TOP = (1 - YOU_FRAC) * 100;
 const ELON_MULT = PEAK / YOU_DAILY;
-const BILLIONS_BELOW = (WORLD_POP * YOU_FRAC) / 1e9;
-const DOLLARS_DAY = Math.round(YOU_DAILY);
 
 const fmtPeople = (n: number) => Math.round(Math.max(0, n)).toLocaleString("en-US");
 const fmtTop = (t: number) => (t >= 10 ? `${Math.round(t)}` : t >= 1 ? t.toFixed(1) : t.toFixed(2));
@@ -71,13 +70,13 @@ function readoutAt(frame: number): Readout {
   switch (phase) {
     case "input":
     case "entry":
+      // the bet: the honest "I'm average" guess (global median) we'll prove wrong
       return {
-        eyebrow: "how rich are you, really?",
-        pre: CURRENCY,
-        big: AMOUNT_LABEL,
-        unit: "",
-        size: 168,
-        sub: `a monthly salary · ${COUNTRY}`,
+        eyebrow: "first — bet where you land",
+        pre: "top ",
+        big: String(GUESS_TOP),
+        unit: "%",
+        sub: "“feels about average, right?”",
       };
     case "ascent":
       return {
@@ -88,12 +87,13 @@ function readoutAt(frame: number): Readout {
         sub: `${fmtPeople(WORLD_POP * frac)} people below`,
       };
     case "hold":
+      // the Gap — the magnet: you bet top 50%, you're actually top ~16%
       return {
-        eyebrow: "you're in the global",
+        eyebrow: "you're actually in the global",
         pre: "top ",
         big: fmtTop(YOU_TOP),
         unit: "%",
-        sub: `${BILLIONS_BELOW.toFixed(1)} billion people below · $${DOLLARS_DAY}/day`,
+        sub: `you guessed top ${GUESS_TOP}% — off by ${GAP_LABEL} people`,
         sub2: `…and top ${LOCAL_TOP_LABEL} at home in ${COUNTRY}`,
       };
     case "tail": {

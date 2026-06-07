@@ -11,6 +11,8 @@ import {
   cdf,
   WORLD_POP,
   YOU_DAILY,
+  GUESS_DAILY,
+  GUESS_TOP,
   camDailyAtFrame,
   camYAtFrame,
   blurAtFrame,
@@ -24,7 +26,7 @@ const TOWER_C: TowerColors = {
   rich: "var(--color-muted)",
   ink: "var(--color-ink)",
   muted: "var(--color-muted)",
-  guess: "var(--color-ink)",
+  guess: "var(--color-muted)",
   paper: "var(--color-paper)",
 };
 
@@ -37,9 +39,18 @@ export const Shaft: React.FC = () => {
   // the tower body is income-independent per frame: build the dots + floors once
   // (YOU hidden — the car overlay marks the camera line), then only the viewBox
   // + the crowd's motion-blur change frame to frame.
+  // bake the muted "GUESS · top 50%" mark + quiet floors into the shaft, so the
+  // camera visibly PASSES the bet on the climb (same as the live reveal). The car
+  // overlay still marks YOU, so no youLabel here.
   const bodyBase = useMemo(() => {
     const t = buildTower(cdf, YOU_DAILY, WORLD_POP, 3000);
-    return towerBody(t, TOWER_C, { live: true, hideYou: true });
+    return towerBody(t, TOWER_C, {
+      live: true,
+      hideYou: true,
+      guessDaily: GUESS_DAILY,
+      guessTopLabel: `GUESS · top ${GUESS_TOP}%`,
+      quietFloors: true,
+    });
   }, []);
 
   const cam = camDailyAtFrame(frame);

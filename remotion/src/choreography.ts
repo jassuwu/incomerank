@@ -6,10 +6,10 @@
  * It reuses the real site geometry (worldY/camYFor from src/lib/tower.ts) and the
  * real baked world distribution, so the demo ranks ₹50,000/mo exactly like the site.
  */
-import { worldY, camYFor, TOWER_PEAK_DAILY, fracBelow } from "../../src/lib/tower";
+import { worldY, camYFor, TOWER_PEAK_DAILY, fracBelow, incomeAtF } from "../../src/lib/tower";
 import { localTopPercent } from "../../src/lib/percentile";
 import { toDailyIntl } from "../../src/lib/ppp";
-import { formatTopPercent } from "../../src/lib/rank-copy";
+import { formatTopPercent, formatPeople } from "../../src/lib/rank-copy";
 import type { CountryData } from "../../src/lib/types";
 import world from "../../src/data/world.json";
 import india from "../../public/data/countries/IND.json";
@@ -31,6 +31,13 @@ export const cdf = world.cdfNom as [number, number][];
 export const WORLD_POP = world.worldPopulation;
 export const BOTTOM = cdf[0][0]; //            poorest income the data covers
 export const PEAK = TOWER_PEAK_DAILY; //       Elon, the ceiling
+
+// ── the bet: the subject guesses the honest "I'm average" anchor (global median,
+// top 50%) and is actually top ~16% — the Gap is the magnet the demo shows off. ──
+export const GUESS_TOP = 50;
+export const GUESS_DAILY = incomeAtF(cdf, 0.5); // income at the global median
+const YOU_FRAC = fracBelow(cdf, YOU_DAILY);
+export const GAP_LABEL = formatPeople(WORLD_POP * Math.abs(YOU_FRAC - 0.5)); // people between guess + truth
 
 // ── the beats (frames @ 30fps) ───────────────────────────────────────────────
 export const INPUT = 96; //        ~3.2s — the form: type the income, hit "find my rank"
