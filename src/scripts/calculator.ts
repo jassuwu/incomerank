@@ -187,7 +187,7 @@ function dailyOf(amount: number): number {
  *  `reveal` (the post-lock-in shaft) quiets ordinary floors and bakes the labeled
  *  YOU + guess pills, which the reveal fades in on landing. */
 function renderTower(youDaily: number, guessDaily?: number, reveal = false) {
-  const t: Tower = buildTower(cdfFor(), youDaily, W.worldPopulation, 3200);
+  const t: Tower = buildTower(cdfFor(), youDaily, W.worldPopulation, 4500);
   const youLabel = reveal ? `YOU · top ${formatTopPercent(topAt(youDaily))}` : undefined;
   const guessTopLabel = guessDaily != null ? `GUESS · top ${formatTopPercent(topAt(guessDaily))}` : undefined;
   fieldEl.innerHTML =

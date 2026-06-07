@@ -13,8 +13,9 @@
 
 // ── axis: income → world-y (up = richer = more negative y) ───────────────────
 export const DECADE = 120; //   world units per 10× of income
-export const SHAFT_HALF = 80; // shaft half-width
-export const VIEW_W = 232; //    viewBox width (portrait shaft + label margins)
+export const SHAFT_HALF = 112; // shaft half-width — fills the viewBox (±116) so the
+//                                crowd reaches the walls instead of a narrow centre band
+export const VIEW_W = 232; //    viewBox width (portrait shaft + thin label margins)
 export const VIEW_H = 300; //    viewBox height (~2.5 decades visible)
 // The guess phase frames a TALLER window than the ride so the puck can reach the
 // poor end of the distribution: 390 world-units (~3.25 decades) from $900/day spans
@@ -103,7 +104,7 @@ export function buildTower(cdf: [number, number][], youDaily: number, pop: numbe
   for (let i = 1; i <= nDots; i++) {
     const F = i / (nDots + 1);
     const income = incomeAtF(cdf, F);
-    dots.push({ x: jitter(i) * SHAFT_HALF * 0.9, y: worldY(income) });
+    dots.push({ x: jitter(i) * SHAFT_HALF * 0.97, y: worldY(income) });
   }
 
   const youFrac = fracBelow(cdf, youDaily);
@@ -266,7 +267,7 @@ export function towerBody(t: Tower, c: TowerColors, o: TowerOpts = {}): string {
 /** Static tower at one camera frame as composable parts — for /r/N + OG, where
  *  the caller supplies its own wrapping/nested <svg> (class, x/y/width/height). */
 export function towerFrame(cdf: [number, number][], youDaily: number, pop: number, c: TowerColors, focusDaily?: number, guessDaily?: number): { viewBox: string; body: string } {
-  const t = buildTower(cdf, youDaily, pop, 2000);
+  const t = buildTower(cdf, youDaily, pop, 2800);
   const camY = camYFor(focusDaily ?? youDaily);
   const body = towerBody(t, c, { guessDaily, live: false, clampTopY: camY - 8, clampBottomY: camY + VIEW_H + 8 });
   return { viewBox: `${nn(-VIEW_W / 2)} ${nn(camY)} ${VIEW_W} ${VIEW_H}`, body };
