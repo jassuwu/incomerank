@@ -30,7 +30,6 @@ const odoLabEl = $<HTMLElement>("odo-lab");
 const guessUiEl = $<HTMLElement>("guess-ui");
 const guessPuckEl = $<HTMLElement>("guess-puck");
 const guessLabEl = $<HTMLElement>("guess-lab");
-const guessInstrEl = $<HTMLElement>("guess-instr");
 const guessGoEl = $<HTMLButtonElement>("guess-go");
 const gapEl = $<HTMLElement>("gap");
 const continueUpEl = $<HTMLElement>("continue-up");
@@ -231,7 +230,7 @@ function setHeadline(income: number) {
 const easeInOutCubic = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const easeLinear = (x: number) => x; // steady, readable pace (the famous-tail climb)
 const BLUR_K = 8; //   motion-blur per unit speed (worldY / ms)
-const BLUR_MAX = 4;
+const BLUR_MAX = 2.5;
 
 /** Animate the car along the log-income axis (the ride). Cancelable via rideId. */
 function ride(from: number, to: number, ms: number, onDone: () => void, ease = easeInOutCubic) {
@@ -306,25 +305,13 @@ function setGuess(daily: number) {
   scrubTick(daily);
 }
 
-// the bet is one decisive gesture (a slingshot): drag or tap to place, LET GO to
-// lock. A short grace after release guards a stray tap — grab again to adjust.
-const GUESS_INSTR = `drag to where you think you rank — <strong class="text-ink">let go to lock</strong>.`;
+// placing the guess is aiming only: drag (or arrow-key) to point the puck. the single
+// deliberate commit is the "open the doors" button (or Enter) — release never fires the
+// ride, so a clean drag can never feel like it "didn't count."
 let dragging = false;
-let armTimer = 0;
-function cancelArm() {
-  if (armTimer) { clearTimeout(armTimer); armTimer = 0; }
-  ascentEl.classList.remove("arming");
-  guessInstrEl.innerHTML = GUESS_INSTR;
-}
-function armLock() {
-  ascentEl.classList.add("arming");
-  guessInstrEl.innerHTML = `locking in <strong class="text-ink">top ${formatTopPercent(topAt(guessDaily))}</strong>… <span class="text-faint">grab to adjust</span>`;
-  armTimer = window.setTimeout(() => { armTimer = 0; if (phase === "guess") startAscent(); }, 600);
-}
 function onPointerDown(e: PointerEvent) {
   if (phase === "ride") { skipToYou(); return; } // tap skips the cinematic
   if (phase !== "guess") return;
-  cancelArm(); // re-grab during the grace → keep adjusting
   ensureAudio(); // pointerdown is a gesture → the drag can tick
   dragging = true;
   lastTickY = NaN; // first move ticks immediately
@@ -337,9 +324,7 @@ function onPointerMove(e: PointerEvent) {
   if (dragging && phase === "guess") { setGuess(pointerToDaily(e.clientY)); e.preventDefault(); }
 }
 function onPointerUp() {
-  if (!dragging || phase !== "guess") { dragging = false; return; }
-  dragging = false;
-  armLock(); // release locks the bet (after the grace)
+  dragging = false; // release only stops aiming — committing is the button / Enter
 }
 ascentEl.addEventListener("pointerdown", onPointerDown);
 ascentEl.addEventListener("pointermove", onPointerMove);
@@ -370,7 +355,6 @@ guessGoEl.addEventListener("click", () => { ensureAudio(); startAscent(); }); //
 // + the gap sentence — no confusing away-and-back trip.
 function startAscent() {
   if (!current || phase !== "guess") return;
-  cancelArm();
   phase = "ride";
   guessTop = topAt(guessDaily);
   ascentEl.classList.remove("guessing");
@@ -389,7 +373,7 @@ function startAscent() {
   setCam(bottom); setOdo(bottom); setHeadline(bottom);
   ascentEl.classList.add("riding");
   revealEyebrowEl.textContent = "climbing past everyone…";
-  ride(bottom, youDaily, 2800, doorsOpen);
+  ride(bottom, youDaily, 4200, doorsOpen);
 }
 
 /** Tap during the cinematic → jump straight to the settled truth. */
@@ -477,7 +461,6 @@ function showReveal(r: RevealData, amount: number) {
   ascentEl.classList.add("guessing");
   reveal.classList.add("guessing");
   ascentEl.classList.remove("riding", "arrived", "landed");
-  cancelArm();
   guessPuckEl.classList.remove("touched");
   guessUiEl.classList.remove("hidden");
   gapEl.classList.add("hidden");
@@ -486,7 +469,7 @@ function showReveal(r: RevealData, amount: number) {
   sharePanelEl.classList.add("hidden");
   shareReady = false;
   revealEyebrowEl.textContent = "Before the doors open…";
-  heroLineEl.textContent = "where do you rank?";
+  heroLineEl.textContent = "where do you think you land?";
 
   renderTower(dailyOf(amount)); // shaft with YOU hidden — no spoilers
   guessVy = worldY(GUESS_HI); // frame the guess window: $900/day (top ~0.1%) at the top…
@@ -508,7 +491,6 @@ function resetToForm() {
   reveal.classList.add("hidden");
   reveal.classList.remove("show", "guessing");
   ascentEl.classList.remove("riding", "arrived", "guessing", "landed");
-  cancelArm();
   heroSubEl.classList.remove("show");
   sharePanelEl.classList.add("hidden");
   rideId++;
