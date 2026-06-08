@@ -62,7 +62,7 @@ const list = countries as CountryIndexEntry[];
           type="submit"
           class="mt-9 inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 font-medium text-paper transition hover:bg-accent active:scale-[0.99]"
         >
-          find my rank <span aria-hidden="true">→</span>
+          let's guess first <span aria-hidden="true">→</span>
         </button>
         <p id="err" class="mt-3 h-4 text-sm text-accent-ink" role="alert" aria-live="polite"></p>
       </form>
@@ -71,7 +71,7 @@ const list = countries as CountryIndexEntry[];
       <section id="reveal" class="hidden" aria-live="polite">
         <p id="reveal-eyebrow" class="eyebrow">Before the doors open…</p>
         <h2 class="hero-h display text-6xl leading-none sm:text-7xl">
-          <span id="hero-line">guess your floor</span>
+          <span id="hero-line">where do you think you land?</span>
         </h2>
         <!-- the home-country rank — supporting context under the global hero, never the hero itself -->
         <p id="hero-sub" class="hero-sub hero-meta mt-1.5 text-sm text-ink-soft">
@@ -129,10 +129,10 @@ const list = countries as CountryIndexEntry[];
         <!-- guess prompt: drag/tap to place, let go to lock (the button is a small fallback) -->
         <div id="guess-ui" class="mt-4 max-w-sm mx-auto text-center">
           <p id="guess-instr" class="text-sm leading-snug text-muted">
-            drag to where you think you rank — <strong class="text-ink">let go to lock</strong>.
+            drag to your guess, then <strong class="text-ink">open the doors</strong>.
           </p>
-          <button id="guess-go" class="mt-2.5 inline-flex rounded-full border border-line px-5 py-1.5 text-sm font-medium text-muted transition hover:border-ink hover:text-ink active:scale-[0.99]" type="button">
-            or tap to lock it in →
+          <button id="guess-go" class="guess-go-btn mt-3 inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3 font-medium text-paper transition hover:bg-accent active:scale-[0.99]" type="button">
+            open the doors <span aria-hidden="true">→</span>
           </button>
         </div>
 
@@ -158,23 +158,23 @@ const list = countries as CountryIndexEntry[];
             <button id="share-save" class="rounded-full border border-line px-5 py-2.5 font-medium text-muted transition hover:text-ink">save image</button>
             <button id="share-copy" class="rounded-full border border-line px-5 py-2.5 font-medium text-muted transition hover:text-ink">copy link</button>
           </div>
-          <p class="mt-2 text-xs text-faint">your income's not on the card or the link. just your rank.</p>
+          <p class="mt-2 text-xs text-muted">your income's not on the card or the link. just your rank.</p>
         </div>
 
-        <p class="rline mt-5 max-w-sm text-xs text-faint">
-          an estimate from World Bank data — your income never left this device.
+        <p class="rline mt-5 max-w-sm text-xs text-muted">
+          an estimate from World Bank household surveys — your income never left this device.
           <a href="#method" class="text-muted underline decoration-line underline-offset-2 hover:text-accent">how it works ↓</a>
         </p>
 
         <!-- ── Go deeper ─────────────────────────────────────────────────── -->
-        <p class="rline mt-10 max-w-lg eyebrow text-faint">go deeper</p>
+        <p class="rline mt-10 max-w-lg eyebrow">go deeper</p>
 
         <ul id="persp-list" class="rline mt-3 max-w-lg list-disc space-y-2 pl-5 text-[0.95rem] leading-relaxed text-muted marker:text-accent"></ul>
 
         <div id="where" class="rline mt-8 max-w-lg">
           <p class="eyebrow">Where you'd be rich</p>
           <ul id="where-list" class="mt-3 divide-y divide-line text-sm"></ul>
-          <p id="where-mode-note" class="mt-2 text-xs text-faint"></p>
+          <p id="where-mode-note" class="mt-2 text-xs text-muted"></p>
           <p id="where-note" class="mt-2 text-xs text-muted"></p>
         </div>
 
@@ -183,7 +183,8 @@ const list = countries as CountryIndexEntry[];
           <p class="mt-3 leading-relaxed text-muted">
             the numbers aren't mine. i convert your <strong class="text-ink">gross</strong> income to
             <strong class="text-ink">US dollars at market exchange rates</strong> and rank it against
-            everyone's, using the World Bank's income data (~7.9 billion people). heads up: i count
+            everyone's, using <strong class="text-ink">World Bank household survey data — not tax filings</strong>
+            (~7.9 billion people, counted whether or not they pay tax). heads up: i count
             you as a household of one and most countries report after-tax income, so your rank's
             probably a little <strong class="text-ink">flattering</strong>. it counts everyone alive,
             kids included. an estimate, not an exact salary rank.
@@ -199,7 +200,7 @@ const list = countries as CountryIndexEntry[];
             </div>
             <div class="flex justify-between gap-4 border-b border-line/60 pb-2">
               <dt class="text-muted">Extreme top tail (&gt; top 1%)</dt>
-              <dd id="tail-note" class="text-right text-ink-soft">shaped to <a href="https://wid.world/" target="_blank" rel="noopener" class="text-accent hover:underline">WID.world</a> top incomes</dd>
+              <dd id="tail-note" class="text-right text-ink-soft">shaped to <a href="https://wid.world/" target="_blank" rel="noopener" class="text-accent-ink hover:underline">WID.world</a> top incomes</dd>
             </div>
             <div class="flex justify-between gap-4">
               <dt class="text-muted">Famous names (the climb)</dt>
@@ -214,10 +215,10 @@ const list = countries as CountryIndexEntry[];
           </p>
           <p class="mt-4 text-xs text-muted">
             check it yourself:
-            <a href="https://datacatalog.worldbank.org/search/dataset/0063646" target="_blank" rel="noopener" class="text-accent hover:underline">World Bank PIP</a> ·
-            <a href="https://ourworldindata.org/grapher/daily-median-income" target="_blank" rel="noopener" class="text-accent hover:underline">Our World in Data</a> ·
-            <a href="https://www.givingwhatwecan.org/how-rich-am-i-methodology" target="_blank" rel="noopener" class="text-accent hover:underline">Giving What We Can</a> ·
-            <a href="https://www.forbes.com/real-time-billionaires/" target="_blank" rel="noopener" class="text-accent hover:underline">Forbes</a>
+            <a href="https://datacatalog.worldbank.org/search/dataset/0063646" target="_blank" rel="noopener" class="text-accent-ink hover:underline">World Bank PIP</a> ·
+            <a href="https://ourworldindata.org/grapher/daily-median-income" target="_blank" rel="noopener" class="text-accent-ink hover:underline">Our World in Data</a> ·
+            <a href="https://www.givingwhatwecan.org/how-rich-am-i-methodology" target="_blank" rel="noopener" class="text-accent-ink hover:underline">Giving What We Can</a> ·
+            <a href="https://www.forbes.com/real-time-billionaires/" target="_blank" rel="noopener" class="text-accent-ink hover:underline">Forbes</a>
           </p>
         </details>
       </section>
@@ -559,13 +560,12 @@ const list = countries as CountryIndexEntry[];
   .guess-puck { display: none; }
   .ascent.guessing .guess-puck { display: block; }
   .ascent.guessing .car { display: none; }
-  /* release-to-lock: a stronger pulse during the ~600ms "locking…" grace */
-  .ascent.arming .guess-puck .puck-dot { animation: pucklock 0.6s ease-out forwards; }
-  @keyframes pucklock {
-    0% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 26%, transparent); }
-    100% { box-shadow: 0 0 0 16px color-mix(in srgb, var(--color-accent) 0%, transparent); }
+  /* the doors button gently pulses so it's clearly the one thing to press */
+  .guess-go-btn { animation: goPulse 2.1s ease-in-out infinite; }
+  @keyframes goPulse {
+    0%, 100% { box-shadow: 0 4px 14px color-mix(in srgb, var(--color-ink) 16%, transparent); }
+    50% { box-shadow: 0 7px 22px color-mix(in srgb, var(--color-ink) 28%, transparent); }
   }
-  .ascent.arming .puck-line { opacity: 0.95; }
 
   /* faint up/down legend during the guess */
   .guess-legend { display: none; }
@@ -573,10 +573,10 @@ const list = countries as CountryIndexEntry[];
   .gl-top, .gl-bot {
     position: absolute;
     right: 6px;
-    font-size: 0.62rem;
+    font-size: 0.72rem;
     font-weight: 600;
     letter-spacing: 0.02em;
-    color: var(--color-faint);
+    color: var(--color-muted);
     pointer-events: none;
     z-index: 1;
   }
@@ -601,7 +601,8 @@ const list = countries as CountryIndexEntry[];
     .ascent.guessing .guess-puck .puck-dot,
     .cu-chevrons svg,
     .cu-btn,
-    .cu-arrow {
+    .cu-arrow,
+    .guess-go-btn {
       transition: none;
       animation: none;
     }
