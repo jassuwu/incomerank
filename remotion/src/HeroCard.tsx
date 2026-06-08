@@ -70,9 +70,9 @@ function readoutAt(frame: number): Readout {
   switch (phase) {
     case "input":
     case "entry":
-      // the bet: the honest "I'm average" guess (global median) we'll prove wrong
+      // the guess: the honest "I'm average" anchor (global median) we'll prove wrong
       return {
-        eyebrow: "first — bet where you land",
+        eyebrow: "first — guess where you land",
         pre: "top ",
         big: String(GUESS_TOP),
         unit: "%",
@@ -87,7 +87,7 @@ function readoutAt(frame: number): Readout {
         sub: `${fmtPeople(WORLD_POP * frac)} people below`,
       };
     case "hold":
-      // the Gap — the magnet: you bet top 50%, you're actually top ~16%
+      // the Gap — the magnet: you guessed top 50%, you're actually top ~16%
       return {
         eyebrow: "you're actually in the global",
         pre: "top ",
@@ -156,8 +156,8 @@ const CtaScene: React.FC = () => {
   );
 };
 
-/** The opening: the income is typed into the real form, then "find my rank" is
- *  pressed — so the demo clearly starts by WAITING for input (an empty field with
+/** The opening: the income is typed into the real form, then "let's guess first"
+ *  is pressed — so the demo clearly starts by WAITING for input (an empty field with
  *  a blinking caret) instead of abruptly counting through numbers. */
 const InputScene: React.FC = () => {
   const frame = useCurrentFrame();
@@ -211,7 +211,7 @@ const InputScene: React.FC = () => {
               boxShadow: pressed ? `0 0 0 14px color-mix(in srgb, ${C.accent} 22%, transparent)` : "none",
             }}
           >
-            find my rank <span>→</span>
+            let's guess first <span>→</span>
           </div>
         </div>
       </div>

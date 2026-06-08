@@ -36,7 +36,7 @@ browser against a static, pre-baked World Bank distribution.
 2. It's converted to US dollars at market exchange rates (`income ÷ 365 ÷ FX`).
 3. That value is looked up in a population-weighted **world** income distribution
    (your global rank) and in your **country's** distribution (your local rank).
-4. You **bet** where you think you land, then a staged reveal climbs to the truth —
+4. You **guess** where you think you land, then a staged reveal climbs to the truth —
    the **gap** between your guess and reality ("off by a billion people") is the
    hook — and a privacy-safe card/link lets you share it (your rank, never your income).
 
@@ -50,8 +50,8 @@ full in [`SOURCES.md`](./SOURCES.md), [`CONTEXT.md`](./CONTEXT.md) and
 
 The hero is **ASCENT** — income as altitude on a log axis. Everyone on Earth is a
 column of dots, densest at the bottom (billions on a few dollars a day) thinning to
-a lonely thread in the rich tail. First you **bet** your own rank by dragging a puck
-up the shaft and letting go; then you ride a glass car *up* the shaft to where you
+a lonely thread in the rich tail. First you **guess** your own rank by dragging a puck
+up the shaft and hitting *open the doors*; then you ride a glass car *up* the shaft to where you
 actually land — your guess left behind as a marker, the distance to it the whole
 point. The world scrolls past; floors are income landmarks (the poverty line, the
 median person, the global top 1%). Past your own floor you can keep climbing —
@@ -67,7 +67,8 @@ The displayed rank is **market exchange rate** US dollars per day — the simple
 "your salary in dollars vs everyone else's" comparison, with no cost-of-living
 adjustment. It covers **165 countries / ~7.9 billion people** (every country with a
 2021 exchange rate). The world curve is a population-weighted mixture of per-country
-distributions built from the **World Bank Poverty & Inequality Platform (PIP)**,
+distributions built from the **World Bank Poverty & Inequality Platform (PIP)** —
+household surveys that count everyone, not just the people who file tax —
 with a Pareto-fitted upper tail whose *shape* above the top 1% is recalibrated to
 the **World Inequality Database (WID.world)**.
 
