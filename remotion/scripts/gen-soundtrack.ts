@@ -61,7 +61,7 @@ function add(t0: number, v: Voice) {
 for (const f of TYPE_KEY_FRAMES) {
   add(f / FPS, { dur: 0.05, peak: 0.16, attack: 0.001, decayEnd: 0.04, type: "triangle", f0: 900 + Math.random() * 120 });
 }
-// the "find my rank" press — a short, bright rising two-note confirm
+// the "let's guess first" press — a short, bright rising two-note confirm
 add(SUBMIT_FRAME / FPS, { dur: 0.16, peak: 0.26, attack: 0.002, decayEnd: 0.14, type: "sine", f0: 660 });
 add(SUBMIT_FRAME / FPS + 0.05, { dur: 0.2, peak: 0.22, attack: 0.002, decayEnd: 0.18, type: "sine", f0: 990 });
 

@@ -32,7 +32,7 @@ export const WORLD_POP = world.worldPopulation;
 export const BOTTOM = cdf[0][0]; //            poorest income the data covers
 export const PEAK = TOWER_PEAK_DAILY; //       Elon, the ceiling
 
-// ── the bet: the subject guesses the honest "I'm average" anchor (global median,
+// ── the guess: the subject guesses the honest "I'm average" anchor (global median,
 // top 50%) and is actually top ~16% — the Gap is the magnet the demo shows off. ──
 export const GUESS_TOP = 50;
 export const GUESS_DAILY = incomeAtF(cdf, 0.5); // income at the global median
@@ -40,7 +40,7 @@ const YOU_FRAC = fracBelow(cdf, YOU_DAILY);
 export const GAP_LABEL = formatPeople(WORLD_POP * Math.abs(YOU_FRAC - 0.5)); // people between guess + truth
 
 // ── the beats (frames @ 30fps) ───────────────────────────────────────────────
-export const INPUT = 96; //        ~3.2s — the form: type the income, hit "find my rank"
+export const INPUT = 96; //        ~3.2s — the form: type the income, hit "let's guess first"
 export const ENTRY = 36; //        ~1.2s — the income on screen, shaft at the ground
 export const ASCENT = 84; //       ~2.8s — ratchet up to your floor
 export const HOLD = 66; //         ~2.2s — land + "you're top 16%" (+ home rank)
@@ -59,12 +59,12 @@ export const CTA_TOTAL = BASE_TOTAL + CTA_LEN; //          621 (~20.7s) — the 
 export const LAND_FRAMES = [ASCENT_END, TAIL_END]; // thunk+chime at each landing
 export const CTA_FRAME = BASE_TOTAL; //                    the end-card lands here
 
-// ── the input scene: the income is typed in, then "find my rank" is pressed ──
+// ── the input scene: the income is typed in, then "let's guess first" is pressed ──
 // (so the demo opens by clearly waiting for input instead of abruptly counting).
 export const TYPE_START = 18; //   frame the first keystroke lands
 export const TYPE_STEP = 11; //    frames between keystrokes
 export const TYPE_STEPS = ["", "5", "50", "500", "5,000", "50,000"];
-export const SUBMIT_FRAME = 80; // the "find my rank" press
+export const SUBMIT_FRAME = 80; // the "let's guess first" press
 
 /** The amount string typed so far at a given input-scene frame. */
 export function typedAmountAt(f: number): string {
