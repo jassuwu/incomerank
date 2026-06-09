@@ -15,6 +15,8 @@ export interface WorldData {
   cdf: [number, number][];
   /** Nominal market-FX US$ basis (the default), same shape. */
   cdfNom: [number, number][];
+  /** US CPI 2021→latest — bumps real (2021-base) buying-power figures to today's US$. */
+  usCpiRatio?: number;
 }
 
 /** Comparison basis: market exchange rate (default) or purchasing power. */

@@ -389,6 +389,7 @@ async function main() {
     worldPopulation: Math.round(worldTrueTotal),
     coveredPopulation: Math.round(worldPop),
     countries: countries.length,
+    usCpiRatio: round(usCpiRatio, 4), // US CPI 2021→T; bumps real buying-power to current US$
     cdf, //    PPP (purchasing power, intl$ 2021) — [welfare, fractionBelow] ascending
     cdfNom, // nominal market-FX US$ at current rates — the default basis
     generated: {
@@ -484,7 +485,7 @@ async function verify() {
   for (const [iso, amt, period] of cases) {
     const c = JSON.parse(await readFile(`${PUB}/${iso}.json`, "utf8"));
     const annual = period === "monthly" ? amt * 12 : amt;
-    const dPpp = annual / 365 / c.ppp2021;
+    const dPpp = annual / 365 / c.ppp2021 / (c.cpiRatio ?? 1);
     const dNom = c.fx ? annual / 365 / c.fx : dPpp;
     const gN = topNom(dNom), gP = globalTop(dPpp), l = localTop(c, dPpp);
     const f = (v: number) => (v < 1 ? v.toFixed(2) : v.toFixed(1));

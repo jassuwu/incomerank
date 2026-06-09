@@ -26,7 +26,7 @@ export interface RevealData {
 }
 
 export function computeReveal(world: WorldData, country: CountryData, amount: number, mode: Mode): RevealData {
-  const dailyPpp = toDailyIntl(amount, country.period, country.ppp2021);
+  const dailyPpp = toDailyIntl(amount, country.period, country.ppp2021, country.cpiRatio ?? 1);
   const dailyNom = toDailyNominal(amount, country.period, country.fx);
   // Global rank uses the chosen basis; local rank is currency-invariant (PPP).
   const useNom = mode === "nominal" && dailyNom != null;
@@ -41,7 +41,7 @@ export function computeReveal(world: WorldData, country: CountryData, amount: nu
     localTop,
     localPercentile: topToPercentile(localTop),
     peopleBelowLabel: formatPeople(peopleBelow),
-    usMonthly: usMonthlyBuyingPower(amount, country.period, country.ppp2021),
+    usMonthly: usMonthlyBuyingPower(amount, country.period, country.ppp2021, country.cpiRatio ?? 1) * (world.usCpiRatio ?? 1),
     usAnnualNominal: (dailyNom ?? dailyPpp) * 365,
     showBuyingPower: country.fx != null && Math.abs(country.ppp2021 / country.fx - 1) > 0.15,
   };

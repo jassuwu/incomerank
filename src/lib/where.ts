@@ -69,7 +69,7 @@ export function whereYoudRank(country: CountryData, amount: number, mode: WhereM
   top1Count: number;
   total: number;
 } {
-  const dailyPpp = toDailyIntl(amount, country.period, country.ppp2021);
+  const dailyPpp = toDailyIntl(amount, country.period, country.ppp2021, country.cpiRatio ?? 1);
   const dailyNom = toDailyNominal(amount, country.period, country.fx);
   const nominal = mode === "nominal" && dailyNom != null;
 
