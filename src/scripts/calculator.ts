@@ -104,7 +104,13 @@ countryEl.addEventListener("change", () => {
   lsSet(LS.country, countryEl.value);
   selectCountry(countryEl.value).then(() => { if (curAmount > 0) refresh(curAmount); });
 });
-periodEl.addEventListener("change", () => lsSet(LS.period, periodEl.value));
+periodEl.addEventListener("change", () => {
+  lsSet(LS.period, periodEl.value);
+  // sync the active country's period + recompute — otherwise the toggle is dead
+  // and a yearly income is still scored as monthly (×12). (bugfix)
+  if (current) current.period = periodEl.value as "annual" | "monthly";
+  if (curAmount > 0) refresh(curAmount);
+});
 
 // ── basis toggle (market exchange rate ⇄ purchasing power) ───────────────────
 // ── perspectives + where-you'd-be-rich ──────────────────────────────────────
@@ -675,5 +681,8 @@ $("share-copy").addEventListener("click", async () => {
   const startIso = saved && countryEl.querySelector(`option[value="${saved}"]`) ? saved : detectIso();
   await selectCountry(startIso); // applyCountry sets the period to the country default
   const sp = lsGet(LS.period);
-  if (sp === "annual" || sp === "monthly") periodEl.value = sp; // then honour the saved period
+  if (sp === "annual" || sp === "monthly") {
+    periodEl.value = sp; // honour the saved period, then let the handler sync current.period
+    periodEl.dispatchEvent(new Event("change"));
+  }
 })();
