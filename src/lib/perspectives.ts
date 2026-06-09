@@ -83,7 +83,7 @@ export function buildPerspectives(
   reveal: RevealData,
   mode: Mode,
 ): string[] {
-  const dailyPpp = toDailyIntl(amount, country.period, country.ppp2021);
+  const dailyPpp = toDailyIntl(amount, country.period, country.ppp2021, country.cpiRatio ?? 1);
   const dailyNom = toDailyNominal(amount, country.period, country.fx);
   const useNom = mode === "nominal" && dailyNom != null;
   const daily = useNom ? dailyNom! : dailyPpp; // current-basis daily value

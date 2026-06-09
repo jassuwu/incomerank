@@ -15,6 +15,8 @@ export interface WorldData {
   cdf: [number, number][];
   /** Nominal market-FX US$ basis (the default), same shape. */
   cdfNom: [number, number][];
+  /** US CPI 2021→latest — bumps real (2021-base) buying-power figures to today's US$. */
+  usCpiRatio?: number;
 }
 
 /** Comparison basis: market exchange rate (default) or purchasing power. */
@@ -32,10 +34,15 @@ export interface CountryData {
   year: number;
   /** PIP 2021 PPP conversion factor (LCU per international $). */
   ppp2021: number;
-  /** Price level vs US (PPP/FX, US=1); null where FX is unavailable. */
+  /** Scale re-expressing an intl$-2021 value in CURRENT nominal US$:
+   *  ppp2021 · CPI(2021→fxYear) / fx. Null where FX is unavailable. */
   priceLevel: number | null;
-  /** Market exchange rate, local currency per US$ (2021); null if unavailable. */
+  /** Market exchange rate, local currency per US$, at `fxYear`; null if unavailable. */
   fx: number | null;
+  /** Year of the FX (and CPI target) behind the current-nominal re-projection. */
+  fxYear?: number | null;
+  /** Local CPI inflation 2021→fxYear folded into `priceLevel` (transparency). */
+  cpiRatio?: number | null;
   /** 99 welfare thresholds (intl$/day) at F = 1%..99%. */
   dist: number[];
   /** Pareto tail governing above `fromF`. */

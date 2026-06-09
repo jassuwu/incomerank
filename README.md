@@ -19,12 +19,12 @@
 <p align="center">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="docs/assets/readme/incomerank-header-poster.png">
-    <img alt="Income Rank rides your income up a log-scale column of everyone on Earth, lands on your global percentile, then keeps climbing past creators, athletes and billionaires from around the world all the way to Elon Musk." src="docs/assets/readme/incomerank-header.gif?v=6" width="900">
+    <img alt="Income Rank rides your income up a log-scale column of everyone on Earth, lands on your global percentile, then keeps climbing past creators, athletes and billionaires from around the world all the way to Elon Musk." src="docs/assets/readme/incomerank-header.gif?v=7" width="900">
   </picture>
 </p>
 
 <p align="center">
-  <em>₹50,000/month is the global top 16% — and Elon Musk earns 61&nbsp;million&times; that <strong>every day</strong>.</em>
+  <em>₹50,000/month is the global top 18% — and Elon Musk earns 69&nbsp;million&times; that <strong>every day</strong>.</em>
 </p>
 
 Your income never touches a server. Every ranking runs **client-side** in your
@@ -66,7 +66,7 @@ the static `/r/N` share pages, the OG cards and this README's header alike.
 The displayed rank is **market exchange rate** US dollars per day — the simple
 "your salary in dollars vs everyone else's" comparison, with no cost-of-living
 adjustment. It covers **165 countries / ~7.9 billion people** (every country with a
-2021 exchange rate). The world curve is a population-weighted mixture of per-country
+current exchange rate). The world curve is a population-weighted mixture of per-country
 distributions built from the **World Bank Poverty & Inequality Platform (PIP)** —
 household surveys that count everyone, not just the people who file tax —
 with a Pareto-fitted upper tail whose *shape* above the top 1% is recalibrated to
@@ -100,13 +100,14 @@ bun test         # unit tests for the ranking / parse / copy logic
 `scripts/build-data.ts` fetches and bakes (downloads cached under `scripts/.cache/`):
 
 - **World Bank PIP** percentiles (dataset 0063646, 2021 PPP) — income distributions.
-- **PIP** 2021 PPP factors; **World Bank** population (`SP.POP.TOTL`) and 2021 FX (`PA.NUS.FCRF`).
+- **PIP** 2021 PPP factors; **World Bank** population (`SP.POP.TOTL`), current FX (`PA.NUS.FCRF`, latest annual) and CPI (`FP.CPI.TOTL`).
 - **REST Countries** — currency codes; **World Bank** — country names.
 - **WID.world** (World pre-tax thresholds, 2021 PPP) — top-tail *shape* above the top 1%.
 
 Each country's CDF is built from its percentile thresholds with a Pareto tail
-(α ≈ 2) fit on its well-measured upper-middle, then divided by its price level onto
-a market-FX basis; the world CDF is the population-weighted mixture. Output is
+(α ≈ 2) fit on its well-measured upper-middle, then re-expressed in current US$ (inflated
+by the country's CPI since 2021 and divided by its latest exchange rate); the world CDF is
+the population-weighted mixture. Output is
 validated against published global anchors for the body (Giving What We Can / Our
 World in Data, same PIP base) and against WID for the tail shape — see `verify()`.
 Generated data (`src/data/`, `public/data/`) is committed so the site builds offline.

@@ -17,7 +17,7 @@ npm run render:social # → out/incomerank-social.mp4  (CTA + sound, for Twitter
 npm run render:hero   # → out/incomerank-hero.mp4    (no CTA, source for the GIF)
 npm run gif           # → out/incomerank-hero.gif    (silent, the README header)
 npm run studio        # live preview / scrub in the Remotion studio
-npm run still -- --frame=245   # one frame (frame 245 = the "you're top 16%" beat)
+npm run still -- --frame=245   # one frame (frame 245 = the "you're top 18%" beat)
 ```
 
 The published assets live in `../docs/assets/readme/`. After re-rendering, copy them:

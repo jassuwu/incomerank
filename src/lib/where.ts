@@ -1,6 +1,6 @@
 import whereData from "../data/where.json";
 import type { CountryData } from "./types";
-import { toDailyIntl } from "./ppp";
+import { toDailyIntl, toDailyNominal } from "./ppp";
 
 interface WEntry { name: string; iso2: string; pop: number; a: number[]; xmin: number; alpha: number; pl: number | null }
 const W = whereData as WEntry[];
@@ -69,13 +69,14 @@ export function whereYoudRank(country: CountryData, amount: number, mode: WhereM
   top1Count: number;
   total: number;
 } {
-  const dailyPpp = toDailyIntl(amount, country.period, country.ppp2021);
-  const userPl = country.priceLevel ?? (country.fx ? country.ppp2021 / country.fx : null);
-  const nominal = mode === "nominal" && userPl != null;
+  const dailyPpp = toDailyIntl(amount, country.period, country.ppp2021, country.cpiRatio ?? 1);
+  const dailyNom = toDailyNominal(amount, country.period, country.fx);
+  const nominal = mode === "nominal" && dailyNom != null;
 
-  // In nominal mode, both your income and each country's distribution are
-  // converted to market-FX US dollars (× the country's price level).
-  const userVal = nominal ? dailyPpp * userPl! : dailyPpp;
+  // In nominal mode your income is today's market-FX US$ (income ÷ current FX), and
+  // each country's 2021-PPP distribution is re-expressed in the same US$ (× its price
+  // level, which already folds in that country's inflation and current exchange rate).
+  const userVal = nominal ? dailyNom! : dailyPpp;
   const rank = (e: WEntry) => topIn(e, userVal, nominal ? (e.pl as number) : 1);
 
   const set = new Set(NOTABLE);
