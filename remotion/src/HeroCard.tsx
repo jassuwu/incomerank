@@ -87,7 +87,7 @@ function readoutAt(frame: number): Readout {
         sub: `${fmtPeople(WORLD_POP * frac)} people below`,
       };
     case "hold":
-      // the Gap — the magnet: you guessed top 50%, you're actually top ~16%
+      // the Gap — the magnet: you guessed top 50%, you're actually top ~18%
       return {
         eyebrow: "you're actually in the global",
         pre: "top ",

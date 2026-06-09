@@ -22,10 +22,11 @@ export const AMOUNT_LABEL = "50,000";
 export const PERIOD = "mo";
 export const COUNTRY = "india";
 const MONTHLY = 50_000;
-export const YOU_DAILY = (MONTHLY * 12) / 365 / india.fx; // → market-FX US$/day (~$22)
+export const YOU_DAILY = (MONTHLY * 12) / 365 / india.fx; // → market-FX US$/day (~$20)
 // the home-country (local) rank — the SAME figure the live site shows for this
 // subject, so the demo's "and top Y% at home" line never drifts from the product.
-export const LOCAL_TOP = localTopPercent(india as unknown as CountryData, toDailyIntl(MONTHLY, "monthly", india.ppp2021));
+// (deflate by CPI to the 2021 price base, exactly like the site — ADR-0005.)
+export const LOCAL_TOP = localTopPercent(india as unknown as CountryData, toDailyIntl(MONTHLY, "monthly", india.ppp2021, india.cpiRatio ?? 1));
 export const LOCAL_TOP_LABEL = formatTopPercent(LOCAL_TOP);
 export const cdf = world.cdfNom as [number, number][];
 export const WORLD_POP = world.worldPopulation;
@@ -33,7 +34,7 @@ export const BOTTOM = cdf[0][0]; //            poorest income the data covers
 export const PEAK = TOWER_PEAK_DAILY; //       Elon, the ceiling
 
 // ── the guess: the subject guesses the honest "I'm average" anchor (global median,
-// top 50%) and is actually top ~16% — the Gap is the magnet the demo shows off. ──
+// top 50%) and is actually top ~18% — the Gap is the magnet the demo shows off. ──
 export const GUESS_TOP = 50;
 export const GUESS_DAILY = incomeAtF(cdf, 0.5); // income at the global median
 const YOU_FRAC = fracBelow(cdf, YOU_DAILY);
@@ -43,7 +44,7 @@ export const GAP_LABEL = formatPeople(WORLD_POP * Math.abs(YOU_FRAC - 0.5)); // 
 export const INPUT = 96; //        ~3.2s — the form: type the income, hit "let's guess first"
 export const ENTRY = 36; //        ~1.2s — the income on screen, shaft at the ground
 export const ASCENT = 84; //       ~2.8s — ratchet up to your floor
-export const HOLD = 66; //         ~2.2s — land + "you're top 16%" (+ home rank)
+export const HOLD = 66; //         ~2.2s — land + "you're top 18%" (+ home rank)
 export const TAIL = 192; //        ~6.4s — climb the famous ladder to Elon
 export const ELON_HOLD = 63; //    ~2.1s — the punchline
 

@@ -19,12 +19,12 @@
 <p align="center">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="docs/assets/readme/incomerank-header-poster.png">
-    <img alt="Income Rank rides your income up a log-scale column of everyone on Earth, lands on your global percentile, then keeps climbing past creators, athletes and billionaires from around the world all the way to Elon Musk." src="docs/assets/readme/incomerank-header.gif?v=6" width="900">
+    <img alt="Income Rank rides your income up a log-scale column of everyone on Earth, lands on your global percentile, then keeps climbing past creators, athletes and billionaires from around the world all the way to Elon Musk." src="docs/assets/readme/incomerank-header.gif?v=7" width="900">
   </picture>
 </p>
 
 <p align="center">
-  <em>₹50,000/month is the global top 16% — and Elon Musk earns 61&nbsp;million&times; that <strong>every day</strong>.</em>
+  <em>₹50,000/month is the global top 18% — and Elon Musk earns 69&nbsp;million&times; that <strong>every day</strong>.</em>
 </p>
 
 Your income never touches a server. Every ranking runs **client-side** in your
