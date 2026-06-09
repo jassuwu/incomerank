@@ -43,7 +43,7 @@ export function computeReveal(world: WorldData, country: CountryData, amount: nu
     peopleBelowLabel: formatPeople(peopleBelow),
     usMonthly: usMonthlyBuyingPower(amount, country.period, country.ppp2021),
     usAnnualNominal: (dailyNom ?? dailyPpp) * 365,
-    showBuyingPower: country.priceLevel != null && Math.abs(country.priceLevel - 1) > 0.15,
+    showBuyingPower: country.fx != null && Math.abs(country.ppp2021 / country.fx - 1) > 0.15,
   };
 }
 

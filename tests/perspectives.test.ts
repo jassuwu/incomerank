@@ -17,7 +17,7 @@ test("US $72k/yr perspectives", () => {
   const r = computeReveal(world as any, usa as any, 72000, "ppp");
   const lines = buildPerspectives(world as any, usa as any, 72000, r, "ppp");
   expect(lines.length).toBeGreaterThanOrEqual(3);
-  expect(lines.some((l) => /world were 100 people/.test(l))).toBe(true);
+  expect(lines.some((l) => /world was 100 people/.test(l))).toBe(true);
   sane(lines);
   console.log("\nUS $72k:\n  " + lines.join("\n  "));
 });

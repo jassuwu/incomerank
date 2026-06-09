@@ -29,9 +29,10 @@ const SRC = {
   csv: "https://datacatalogfiles.worldbank.org/ddh-published/0063646/DR0090357/world_100bin_revised.csv",
   ppp: "https://api.worldbank.org/pip/v1/aux?table=ppp&format=json",
   pop: "https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL?mrv=1&per_page=400&format=json",
-  // official exchange rate (LCU per US$, 2021) → price level = PPP / FX (US=1).
-  // Drives the contextual "buying power in US terms" line: show where cheaper.
-  fx: "https://api.worldbank.org/v2/country/all/indicator/PA.NUS.FCRF?date=2021&per_page=400&format=json",
+  // official exchange rate (LCU per US$), 2021..latest → the market-FX basis.
+  fx: "https://api.worldbank.org/v2/country/all/indicator/PA.NUS.FCRF?date=2021:2025&per_page=20000&format=json",
+  // consumer price index — re-projects each 2021-PPP curve to current nominal terms.
+  cpi: "https://api.worldbank.org/v2/country/all/indicator/FP.CPI.TOTL?date=2021:2025&per_page=20000&format=json",
   meta: "https://api.worldbank.org/v2/country?per_page=400&format=json",
   currency: "https://restcountries.com/v3.1/all?fields=cca3,currencies",
 };
@@ -96,12 +97,22 @@ function spliceWidTail(cdf: [number, number][]): [number, number][] {
 async function fetchCached(url: string, name: string): Promise<string> {
   const path = `${CACHE}/${name}`;
   if (existsSync(path)) return readFile(path, "utf8");
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`fetch ${url} -> ${res.status}`);
-  const text = await res.text();
-  await writeFile(path, text);
-  console.log(`  ↓ ${name} (${(text.length / 1e6).toFixed(1)} MB)`);
-  return text;
+  // The World Bank API intermittently 400s; retry a few times with backoff.
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`fetch ${url} -> ${res.status}`);
+      const text = await res.text();
+      await writeFile(path, text);
+      console.log(`  ↓ ${name} (${(text.length / 1e6).toFixed(1)} MB)`);
+      return text;
+    } catch (e) {
+      lastErr = e;
+      if (attempt < 4) await new Promise((r) => setTimeout(r, 800 * attempt));
+    }
+  }
+  throw lastErr;
 }
 
 // ── A country's distribution: ascending support points (welfare, F) up to
@@ -160,11 +171,12 @@ async function main() {
   await mkdir(PUB, { recursive: true });
   console.log("Income Rank — data pipeline\n");
 
-  const [csvText, pppJson, popJson, fxJson, metaJson, curJson] = await Promise.all([
+  const [csvText, pppJson, popJson, fxJson, cpiJson, metaJson, curJson] = await Promise.all([
     fetchCached(SRC.csv, "world_100bin_revised.csv"),
     fetchCached(SRC.ppp, "pip_ppp_2021.json"),
     fetchCached(SRC.pop, "wb_population.json"),
-    fetchCached(SRC.fx, "wb_fx_2021.json"),
+    fetchCached(SRC.fx, "wb_fx_range.json"),
+    fetchCached(SRC.cpi, "wb_cpi.json"),
     fetchCached(SRC.meta, "wb_country_meta.json"),
     fetchCached(SRC.currency, "restcountries_currencies.json"),
   ]);
@@ -176,8 +188,60 @@ async function main() {
   const pop = new Map<string, number>();
   for (const r of (JSON.parse(popJson)[1] ?? []) as any[]) if (r.value != null) pop.set(r.countryiso3code, r.value);
 
-  const fx = new Map<string, number>(); // official exchange rate, LCU per US$, 2021
-  for (const r of (JSON.parse(fxJson)[1] ?? []) as any[]) if (r.value) fx.set(r.countryiso3code, r.value);
+  // official exchange rate (LCU per US$) and CPI, indexed by country → year.
+  const fxBy = new Map<string, Map<number, number>>();
+  for (const r of (JSON.parse(fxJson)[1] ?? []) as any[]) {
+    if (r.value == null) continue;
+    let m = fxBy.get(r.countryiso3code); if (!m) fxBy.set(r.countryiso3code, (m = new Map()));
+    m.set(+r.date, r.value);
+  }
+  const cpiBy = new Map<string, Map<number, number>>();
+  for (const r of (JSON.parse(cpiJson)[1] ?? []) as any[]) {
+    if (r.value == null) continue;
+    let m = cpiBy.get(r.countryiso3code); if (!m) cpiBy.set(r.countryiso3code, (m = new Map()));
+    m.set(+r.date, r.value);
+  }
+  const latestYear = (m: Map<number, number> | undefined, max = 2025, min = 2022): number | null => {
+    if (!m) return null;
+    for (let y = max; y >= min; y--) if (m.get(y) != null) return y;
+    return null;
+  };
+  // US CPI inflation 2021→latest — the relative-PPP fallback when a country's own CPI is missing.
+  const usCpi = cpiBy.get("USA");
+  const usY = latestYear(usCpi, 2025, 2021) ?? 2021;
+  const usCpiRatio = usCpi?.get(2021) ? usCpi.get(usY)! / usCpi.get(2021)! : 1;
+
+  // ── Re-project a country's 2021-PPP welfare into CURRENT nominal market-FX US$.
+  //    price level pl = ppp2021 · CPI(2021→T) / FX(T): a 2021-real intl$ value ×pl
+  //    is today's US$. The user enters current nominal income, converted at FX(T)
+  //    too, so both sit on one basis. Missing CPI (e.g. Argentina) → infer the
+  //    inflation from the currency's own depreciation via relative PPP. ──────────
+  type Basis = { fx: number; fxYear: number; cpiRatio: number; cpiSrc: string; pl: number };
+  const basisFor = (cc: string): Basis | null => {
+    const factor = ppp.get(cc); if (!factor) return null;
+    const fm = fxBy.get(cc), cm = cpiBy.get(cc);
+    const fx2021 = fm?.get(2021) ?? null;
+    const fyr = latestYear(fm);
+    if (fyr != null) {
+      const fxNow = fm!.get(fyr)!;
+      const c2021 = cm?.get(2021) ?? null;
+      const cyr = latestYear(cm, fyr, 2021);
+      const cNow = cyr != null ? cm!.get(cyr)! : null;
+      let cpiRatio: number, cpiSrc: string;
+      if (c2021 != null && cNow != null) { cpiRatio = cNow / c2021; cpiSrc = "reported"; }
+      else if (fx2021 != null && fx2021 > 0) { cpiRatio = (fxNow / fx2021) * usCpiRatio; cpiSrc = "implied"; }
+      else { cpiRatio = usCpiRatio; cpiSrc = "us-only"; }
+      return { fx: fxNow, fxYear: fyr, cpiRatio, cpiSrc, pl: (factor * cpiRatio) / fxNow };
+    }
+    if (fx2021 != null && fx2021 > 0) {
+      const c2021 = cm?.get(2021) ?? null;
+      const cyr = latestYear(cm, 2025, 2022);
+      const cpiRatio = c2021 != null && cyr != null ? cm!.get(cyr)! / c2021 : 1;
+      return { fx: fx2021, fxYear: 2021, cpiRatio, cpiSrc: c2021 != null ? "reported" : "flat", pl: (factor * cpiRatio) / fx2021 };
+    }
+    return null;
+  };
+  const basisStats = new Map<string, number>();
 
   const names = new Map<string, { name: string; iso2: string }>();
   for (const r of (JSON.parse(metaJson)[1] ?? []) as any[])
@@ -254,8 +318,10 @@ async function main() {
     }
     if (pts.length < 10) continue;
     const dist = buildDist(pts);
-    // price level (PPP/FX) — re-expresses the PPP distribution in market-FX US$.
-    const plc = ppp.get(cc) && fx.get(cc) ? ppp.get(cc)! / fx.get(cc)! : null;
+    // re-express this country's 2021-PPP distribution in CURRENT nominal market-FX US$.
+    const basis = basisFor(cc);
+    const plc = basis ? basis.pl : null;
+    if (basis) basisStats.set(basis.cpiSrc, (basisStats.get(basis.cpiSrc) ?? 0) + 1);
     countries.push({ cc, dist, w: cpop, pl: plc });
     worldPop += cpop;
     persp.push({ name: meta.name, median: round(quantile(dist, 0.5), 3), pop: cpop, pl: plc != null ? round(plc, 3) : null });
@@ -275,13 +341,15 @@ async function main() {
         iso: cc, iso2: meta.iso2, name: meta.name,
         currency: cur, period: CORE5[cc]?.period ?? "annual", core5: !!CORE5[cc],
         welfareType: welfareType.get(cc), year: chosen.get(cc)!.year, ppp2021: round(factor, 6),
-        priceLevel: fx.get(cc) ? round(factor / fx.get(cc)!, 3) : null,
-        fx: fx.get(cc) ? round(fx.get(cc)!, 4) : null,
+        priceLevel: basis ? round(basis.pl, 4) : null,
+        fx: basis ? round(basis.fx, 4) : null,
+        fxYear: basis?.fxYear ?? null,
+        cpiRatio: basis ? round(basis.cpiRatio, 4) : null,
         dist: distOut, tail: { fromF: TAIL_START, xmin: round(dist.xmin, 4), alpha: round(dist.alpha, 4) },
       }));
       nFiles++;
-      // market-FX is the only basis, so a country is only selectable if it has an FX rate
-      if (fx.get(cc)) index.push({ iso: cc, iso2: meta.iso2, name: meta.name, currency: cur, period: CORE5[cc]?.period ?? "annual", core5: !!CORE5[cc] });
+      // market-FX is the only basis, so a country is only selectable if it re-projects
+      if (basis) index.push({ iso: cc, iso2: meta.iso2, name: meta.name, currency: cur, period: CORE5[cc]?.period ?? "annual", core5: !!CORE5[cc] });
     }
   }
 
@@ -317,13 +385,17 @@ async function main() {
   // as following the curve at a given x — honest for high earners, where ~all are below.
   const worldTrueTotal = pop.get("WLD") ?? Math.round(worldPop);
   await writeFile(`${OUT}/world.json`, JSON.stringify({
-    unit: "intl$2021/day",
+    unit: "USD/day (nominal, current market FX)",
     worldPopulation: Math.round(worldTrueTotal),
     coveredPopulation: Math.round(worldPop),
     countries: countries.length,
-    cdf, //    PPP (purchasing power) — [welfare, fractionBelow] ascending
-    cdfNom, // nominal market-FX US$ — same shape, the default basis
-    generated: { source: "World Bank PIP 0063646 (2021 PPP); mixture of country CDFs; tail >p99 shaped to WID.world WO 2021", tailStart: TAIL_START },
+    cdf, //    PPP (purchasing power, intl$ 2021) — [welfare, fractionBelow] ascending
+    cdfNom, // nominal market-FX US$ at current rates — the default basis
+    generated: {
+      source: "World Bank PIP 0063646 (2021 PPP); mixture of country CDFs; tail >p99 shaped to WID.world WO 2021",
+      nominalBasis: "each 2021-PPP curve re-expressed in current US$: w · ppp2021 · CPI(2021→T) ÷ FX(T), T = latest annual (WB FP.CPI.TOTL + PA.NUS.FCRF)",
+      tailStart: TAIL_START,
+    },
   }));
 
   index.sort((a, b) => (b.core5 ? 1 : 0) - (a.core5 ? 1 : 0) || a.name.localeCompare(b.name));
@@ -337,6 +409,7 @@ async function main() {
 
   console.log(`\n✓ world.json: ${cdf.length}-pt mixture CDF · world pop ${(worldPop / 1e9).toFixed(2)}B · ${countries.length} countries`);
   console.log(`✓ ${nFiles} selectable country files + index`);
+  console.log(`✓ nominal re-projection: ${[...basisStats].map(([k, v]) => `${v} ${k}`).join(" · ")}`);
 
   await verify();
 }
@@ -345,6 +418,7 @@ async function main() {
 async function verify() {
   const world = JSON.parse(await readFile(`${OUT}/world.json`, "utf8"));
   const cdf: [number, number][] = world.cdf;
+  const cdfNom: [number, number][] = world.cdfNom;
   const wAtF = (F: number) => {
     if (F <= cdf[0][1]) return cdf[0][0];
     if (F >= cdf[cdf.length - 1][1]) return cdf[cdf.length - 1][0];
@@ -398,13 +472,23 @@ async function verify() {
     ["IND", 30000, "monthly"], ["IND", 80000, "monthly"], ["IND", 300000, "monthly"],
     ["GBR", 45000, "annual"], ["DEU", 5000, "monthly"], ["BRA", 5000, "monthly"],
   ];
-  console.log("\n── sample reveals (global top % · local top %) ──");
+  const topNom = (daily: number) => {
+    if (daily <= cdfNom[0][0]) return 100;
+    if (daily >= cdfNom[cdfNom.length - 1][0]) return 0.001;
+    let lo = 0, hi = cdfNom.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cdfNom[m][0] < daily) lo = m; else hi = m; }
+    const t = (daily - cdfNom[lo][0]) / (cdfNom[hi][0] - cdfNom[lo][0]);
+    return (1 - (cdfNom[lo][1] + t * (cdfNom[hi][1] - cdfNom[lo][1]))) * 100;
+  };
+  console.log("\n── sample reveals (nominal $/day · topFX (market) · topPPP · local) ──");
   for (const [iso, amt, period] of cases) {
     const c = JSON.parse(await readFile(`${PUB}/${iso}.json`, "utf8"));
-    const daily = (period === "monthly" ? amt * 12 : amt) / 365 / c.ppp2021;
-    const g = globalTop(daily), l = localTop(c, daily);
+    const annual = period === "monthly" ? amt * 12 : amt;
+    const dPpp = annual / 365 / c.ppp2021;
+    const dNom = c.fx ? annual / 365 / c.fx : dPpp;
+    const gN = topNom(dNom), gP = globalTop(dPpp), l = localTop(c, dPpp);
     const f = (v: number) => (v < 1 ? v.toFixed(2) : v.toFixed(1));
-    console.log(`  ${iso} ${(period === "monthly" ? amt + "/mo" : amt + "/yr").padEnd(9)} → $${daily.toFixed(0).padStart(4)}/day · global top ${f(g)}% · local top ${f(l)}%`);
+    console.log(`  ${iso} ${(period === "monthly" ? amt + "/mo" : amt + "/yr").padEnd(9)} → $${dNom.toFixed(0).padStart(5)}/day · topFX ${f(gN)}% · topPPP ${f(gP)}% · local ${f(l)}% [fx${c.fxYear ?? "?"}]`);
   }
 }
 

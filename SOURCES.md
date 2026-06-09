@@ -11,12 +11,13 @@ Last verified: **2026-06-05** (against the live World Bank / OWID data).
 
 ## How a rank is produced (one paragraph)
 
-Your gross income is converted to **US dollars at market exchange rates**
+Your gross income is converted to **US dollars at current market exchange rates**
 (`income ÷ 365 ÷ FX-rate`), then looked up in a **population-weighted mixture of
 country income distributions** built from the World Bank's Poverty & Inequality
-Platform (PIP) and re-expressed at those same market rates. (PIP publishes in 2021 PPP
-international dollars; we divide each country's curve by its price level to put the
-whole world on a market-FX basis — the simpler "your salary in dollars vs everyone
+Platform (PIP) and re-expressed on that same current-US$ basis. (PIP publishes in 2021 PPP
+international dollars; we bring each country's curve up to today — inflate by its CPI
+since 2021, then convert at the latest exchange rate — to put the whole world on a current
+market-FX basis: the simpler "your salary in dollars vs everyone
 else's" comparison, with no cost-of-living adjustment.) Your **global rank** is your
 position in that world distribution; your **local rank** is your position within your own
 country's distribution (price-level-invariant, so it's the same either way). Each country's
@@ -45,13 +46,18 @@ All fetched in `scripts/build-data.ts` (the `SRC` object), cached under
 | **Income distribution** — 100 percentile bins per country-year, 2021 PPP (the core dataset) | World Bank **Poverty & Inequality Platform (PIP)** | [`world_100bin_revised.csv`](https://datacatalogfiles.worldbank.org/ddh-published/0063646/DR0090357/world_100bin_revised.csv) · catalog: [dataset 0063646](https://datacatalog.worldbank.org/search/dataset/0063646) | **CC0** (public domain) |
 | **PPP conversion factors** (2021) | World Bank PIP (ICP price surveys) | [`pip/v1/aux?table=ppp`](https://api.worldbank.org/pip/v1/aux?table=ppp&format=json) | CC BY 4.0 |
 | **Population** (weights) | World Bank Open Data (source: UN Population Division) | [`SP.POP.TOTL`](https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL?mrv=1&per_page=400&format=json) | CC BY 4.0 |
-| **Official exchange rate** (2021, for the price-level rule) | World Bank Open Data (source: IMF IFS) | [`PA.NUS.FCRF`](https://api.worldbank.org/v2/country/all/indicator/PA.NUS.FCRF?date=2021&per_page=400&format=json) | CC BY 4.0 |
+| **Official exchange rate** (2021–latest, market-FX basis) | World Bank Open Data (source: IMF IFS) | [`PA.NUS.FCRF`](https://api.worldbank.org/v2/country/all/indicator/PA.NUS.FCRF?date=2021:2025&per_page=20000&format=json) | CC BY 4.0 |
+| **Consumer price index** (2021→latest re-projection) | World Bank Open Data | [`FP.CPI.TOTL`](https://api.worldbank.org/v2/country/all/indicator/FP.CPI.TOTL?date=2021:2025&per_page=20000&format=json) | CC BY 4.0 |
 | **Country names / ISO / region** | World Bank Open Data | [`/v2/country`](https://api.worldbank.org/v2/country?per_page=400&format=json) | CC BY 4.0 |
 | **Currency codes** (labels only — not rank-affecting) | REST Countries (community-run) | [`/v3.1/all?fields=cca3,currencies`](https://restcountries.com/v3.1/all?fields=cca3,currencies) | MPL-2.0 (project) |
 
 **Vintage notes.** 2021 is the **PPP base year** (the World Bank's current standard; it
 replaced 2017 PPP). Survey years span **2021–2024**; population weights are **2024**
-(`mrv=1`). So "2021" labels the price basis, not the year of every input.
+(`mrv=1`). The market-FX basis is re-projected to the **latest annual** FX and CPI (≈2024):
+each 2021-PPP curve is inflated by its CPI since 2021 and converted at the current rate;
+where a country's CPI is missing (e.g. Argentina) the inflation is inferred from its
+currency's depreciation via relative PPP. So "2021" labels the PPP/price base, not the
+exchange-rate vintage. (See [ADR-0005](./docs/adr/0005-current-nominal-fx-cpi-reprojection.md).)
 
 ---
 
@@ -168,8 +174,8 @@ not hidden (see `docs/adr/0001-income-rank-methodology.md` and `CONTEXT.md`):
    non-earners included — not just earners.
 4. **Coverage = 171 countries / ~7.9 billion people**, not the literal ~8.1 billion world
    total. Copy that says "the world" means this covered population.
-5. **Survey drift.** Surveys are 2021–2024; a 2026 salary ranks slightly high as incomes
-   have risen since.
+5. **Survey drift.** Surveys are 2021–2024, re-projected to today's prices and exchange
+   rates; a 2026 salary still ranks slightly high, as survey years lag the present.
 6. **Extreme tail is modelled, not measured.** Above the top 1%, household surveys top-code
    the rich, so the tail is a Pareto curve. Its *shape* is now calibrated to **WID.world**'s
    measured world top-tail (α ≈ 1.79 → 1.68), anchored at the survey's p99 level — but it is
